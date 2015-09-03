@@ -135,17 +135,17 @@ int main(int argc, char **argv) {
         auto conf = newInstance<map<string, string>>();
         (*conf)["trainImagesOffset"] = DEFAULT_TRAIN_IMAGES_OFFSET;
         (*conf)["trainImagesNumber"] = DEFAULT_TRAIN_IMAGES_NUMBER;
-        (*conf)["evalImagesOffset"] = DEFAULT_EVAL_IMAGES_OFFSET;
-        (*conf)["evalImagesNumber"] = DEFAULT_EVAL_IMAGES_NUMBER;
-        (*conf)["testImagesOffset"] = DEFAULT_TEST_IMAGES_OFFSET;
-        (*conf)["testImagesNumber"] = DEFAULT_TEST_IMAGES_NUMBER;
-        (*conf)["readParameters"] = DEFAULT_READ_PARAMETERS;
-        (*conf)["epochsNumber"] = DEFAULT_EPOCHS_NUMBER;
-        (*conf)["batchSize"] = DEFAULT_BATCH_SIZE;
-        (*conf)["costFunction"] = DEFAULT_COST_FUNCTION;
-        (*conf)["learningRate"] = DEFAULT_LEARNING_RATE;
-        (*conf)["regularization"] = DEFAULT_REGULARIZATION;
-        (*conf)["weightDecayRate"] = DEFAULT_WEIGHT_DECAY_RATE;
+        (*conf)["evalImagesOffset"] =  DEFAULT_EVAL_IMAGES_OFFSET;
+        (*conf)["evalImagesNumber"] =  DEFAULT_EVAL_IMAGES_NUMBER;
+        (*conf)["testImagesOffset"] =  DEFAULT_TEST_IMAGES_OFFSET;
+        (*conf)["testImagesNumber"] =  DEFAULT_TEST_IMAGES_NUMBER;
+        (*conf)["readParameters"] =    DEFAULT_READ_PARAMETERS;
+        (*conf)["epochsNumber"] =      DEFAULT_EPOCHS_NUMBER;
+        (*conf)["batchSize"] =         DEFAULT_BATCH_SIZE;
+        (*conf)["costFunction"] =      DEFAULT_COST_FUNCTION;
+        (*conf)["learningRate"] =      DEFAULT_LEARNING_RATE;
+        (*conf)["regularization"] =    DEFAULT_REGULARIZATION;
+        (*conf)["weightDecayRate"] =   DEFAULT_WEIGHT_DECAY_RATE;
         setConfig(argc - 2, argv + 1, conf.get());
         if (getCostFunctions()->count((*conf)["costFunction"]) == 0) 
             throw describe(__FILE__, "(", __LINE__, "): " , "'", (*conf)["costFunction"], "'というコスト関数はありません。");
