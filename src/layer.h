@@ -23,24 +23,21 @@ public:
         { throw describe(__FILE__, "(", __LINE__, "): ", "•s³‚ÈŒÄ‚Ño‚µ‚Å‚·B"); }
     
     void read(istream &is) {
-        for (auto n : this->neurons) {
+        for (auto n : this->neurons) 
             n->read(is);
-        }
     }
     
     void write(ostream &os) {
-        for (auto n : this->neurons) {
+        for (auto n : this->neurons) 
             n->write(os);
-        }
     }
 };
 
 class InputLayer : public virtual Layer {
 public:
     InputLayer() {
-        for (auto i = 0; i < IMAGE_AREA; i++) {
+        for (auto i = 0; i < IMAGE_AREA; i++) 
             this->neurons.push_back(newInstance<InputNeuron>());
-        }
     }
 };
 
@@ -73,9 +70,8 @@ public:
     OutputLayer(const shared_ptr<ActivationFunction> &activationFunction) : 
         NotInputLayer(activationFunction) 
     {
-        for (auto i = 0; i < LABEL_VALUES_NUMBER; i++) {
+        for (auto i = 0; i < LABEL_VALUES_NUMBER; i++) 
             this->neurons.push_back(newInstance<OutputNeuron>());
-        }
     }
 };
 
@@ -86,9 +82,8 @@ protected:
         const shared_ptr<ActivationFunction> &activationFunction) : 
         NotInputLayer(activationFunction) 
     {
-        for (auto i = 0; i < neuronsNumber; i++) {
+        for (auto i = 0; i < neuronsNumber; i++) 
             this->neurons.push_back(newInstance<HiddenNeuron>());
-        }
     }
 };
 

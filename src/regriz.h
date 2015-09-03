@@ -48,9 +48,8 @@ public:
         double absoluteWeightsSum = 0.0;
         for (auto l = layers->begin() + 1; l != layers->end(); l++) {
             for (auto n : (*(*l)->getNeurons())) {
-                for (auto s : *n->getInputSynapses()) {
+                for (auto s : *n->getInputSynapses()) 
                     absoluteWeightsSum += fabs(s->getWeight());
-                }
             }
         }
         return (
@@ -88,9 +87,8 @@ public:
         double squaredWeightsSum = 0.0;
         for (auto l = layers->begin() + 1; l != layers->end(); l++) {
             for (auto n : (*(*l)->getNeurons())) {
-                for (auto s : *n->getInputSynapses()) {
+                for (auto s : *n->getInputSynapses()) 
                     squaredWeightsSum += s->getWeight() * s->getWeight();
-                }
             }
         }
         return (

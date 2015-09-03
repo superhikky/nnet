@@ -141,9 +141,8 @@ public:
     void putTextArt(ostream &os) {
         auto putHorizontalBorder = [&os]() {
             os << '+';
-            for (auto x = 0; x < IMAGE_SIDE_LENGTH; x++) {
+            for (auto x = 0; x < IMAGE_SIDE_LENGTH; x++) 
                 os << '-';
-            }
             os << '+' << endl;
         };
         
@@ -194,12 +193,10 @@ inline shared_ptr<MNIST> readMNIST(istream &imagesIS, istream &labelsIS) {
     if (columnsNumber != IMAGE_SIDE_LENGTH) 
         throw describe(__FILE__, "(", __LINE__, "): ", "‰æ‘œ‚Ì•‚Í", IMAGE_SIDE_LENGTH, "‚Å‚È‚¯‚ê‚Î‚È‚è‚Ü‚¹‚ñB");
     mnist->resize(imagesNumber);
-    for (auto i = 0; i < imagesNumber; i++) {
+    for (auto i = 0; i < imagesNumber; i++) 
         (*mnist)[i] = newInstance<Image>(i);
-    }
-    for (auto i = 0; i < imagesNumber; i++) {
+    for (auto i = 0; i < imagesNumber; i++) 
         imagesIS.read((char *)&(*(*mnist)[i]->getIntensities())[0], IMAGE_AREA);
-    }
     
     labelsIS.seekg(8, ios_base::cur);
     for (auto i = 0; i < imagesNumber; i++) {

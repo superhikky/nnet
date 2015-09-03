@@ -84,17 +84,15 @@ public:
         if (is.gcount() < sizeof(double)) 
             throw describe(__FILE__, "(", __LINE__, "): " , "パラメータを読み込めません。");
         setBias(bias);
-        for (auto s : *getInputSynapses()) {
+        for (auto s : *getInputSynapses()) 
             s->read(is);
-        }
     }
     
     void write(ostream &os) {
         double b = getBias();
         os.write((char *)&b, sizeof(double));
-        for (auto s : *getInputSynapses()) {
+        for (auto s : *getInputSynapses()) 
             s->write(os);
-        }
     }
 };
 

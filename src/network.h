@@ -56,24 +56,21 @@ protected:
         for (auto l = this->layers->begin() + 1; l != this->layers->end(); l++) {
             for (auto n : (*(*l)->getNeurons())) {
                 n->clearBiasGradient();
-                for (auto s : *n->getInputSynapses()) {
+                for (auto s : *n->getInputSynapses()) 
                     s->clearWeightGradient();
-                }
             }
         }
     }
     
     void feedForward(Image *image) {
         auto inputNeurons = this->layers->front()->getNeurons();
-        for (auto i = 0; i < IMAGE_AREA; i++) {
+        for (auto i = 0; i < IMAGE_AREA; i++) 
             (*inputNeurons)[i]->setOutput((double)(*image->getIntensities())[i] / 255.0);
-        }
         for (auto l = this->layers->begin() + 1; l != this->layers->end(); l++) {
             for (auto n : *(*l)->getNeurons()) {
                 n->clearInput();
-                for (auto s : *n->getInputSynapses()) {
+                for (auto s : *n->getInputSynapses()) 
                     n->addInput(s->getWeight() * s->getSource()->getOutput());
-                }
                 n->addInput(n->getBias());
                 n->setOutput((*l)->getActivationFunction()->computeOutput(n->getInput()));
             }
@@ -97,11 +94,10 @@ protected:
     double computeImageCost(const size_t &label) {
         double cost = 0.0;
         auto outputNeurons = this->layers->back()->getNeurons();
-        for (auto i = 0; i < outputNeurons->size(); i++) {
+        for (auto i = 0; i < outputNeurons->size(); i++) 
             cost += this->costFunction->computeOutputNeuronCost(
                 (*outputNeurons)[i].get(), 
                 getDesiredOutput(i, label));
-        }
         return cost;
     }
     
@@ -118,18 +114,16 @@ protected:
             } else {
                 for (auto n : (*(*l)->getNeurons())) {
                     double error = 0.0;
-                    for (auto s : *n->getOutputSynapses()) {
+                    for (auto s : *n->getOutputSynapses()) 
                         error += s->getWeight() * s->getDestination()->getError();
-                    }
                     error *= (*l)->getActivationFunction()->computeDifferentialOutput(n->getInput());
                     n->setError(error);
                 }
             }
             for (auto n : (*(*l)->getNeurons())) {
                 n->addBiasGradient(n->getError());
-                for (auto s : *n->getInputSynapses()) {
+                for (auto s : *n->getInputSynapses()) 
                     s->addWeightGradient(s->getSource()->getOutput() * n->getError());
-                }
             }
         }
     }
@@ -140,7 +134,7 @@ protected:
                 n->setBias(
                     n->getBias() - 
                     this->learningRate * n->getBiasGradient() / batchSize);
-                for (auto s : *n->getInputSynapses()) {
+                for (auto s : *n->getInputSynapses()) 
                     s->setWeight(
                         this->regularization->computeDecayedWeight(
                             s->getWeight(), 
@@ -148,7 +142,6 @@ protected:
                             this->weightDecayRate, 
                             imagesNumber) - 
                         this->learningRate * s->getWeightGradient() / batchSize);
-                }
             }
         }
     }
@@ -171,9 +164,8 @@ public:
             weightDecayRate(weightDecayRate), 
             log            (log) 
     {
-        for (auto i = 1; i < this->layers->size(); i++) {
+        for (auto i = 1; i < this->layers->size(); i++) 
             (*this->layers)[i]->connect((*this->layers)[i - 1].get());
-        }
     }
     
     void train(
@@ -283,15 +275,13 @@ public:
     }
     
     void read(istream &is) {
-        for (auto l = this->layers->begin() + 1; l != this->layers->end(); l++) {
+        for (auto l = this->layers->begin() + 1; l != this->layers->end(); l++) 
             (*l)->read(is);
-        }
     }
     
     void write(ostream &os) {
-        for (auto l = this->layers->begin() + 1; l != this->layers->end(); l++) {
+        for (auto l = this->layers->begin() + 1; l != this->layers->end(); l++) 
             (*l)->write(os);
-        }
     }
 };
 
