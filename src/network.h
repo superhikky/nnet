@@ -186,9 +186,8 @@ public:
         for (auto i = 0; i < epochsNumber; i++) {
             size_t epochTrainCorrectAnswersNumber = 0;
             double trainCost = 0.0;
-            for (auto j = 0; j < trainImagesNumber; j++) {
+            for (auto j = 0; j < trainImagesNumber; j++) 
                 imageIndices[j] = trainImagesOffset + j;
-            }
             for (auto j = 0;; j++) {
                 if (j % batchSize == 0 || j == trainImagesNumber) {
                     if (j != 0) 
