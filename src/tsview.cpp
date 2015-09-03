@@ -12,7 +12,7 @@ using namespace std;
 #define DEFAULT_ONLY_MISTAKE "yes"
 
 const string USAGE = 
-"tsviewはnnetのテストログからテキストアートを表\示します。\n"
+"tsviewはnnetのテストログからテキストアートを表示します。\n"
 "使い方: ./tsview 設定...\n"
 "  設定の書式は'項目名=内容'です。\n"
 "  例えば'testImagesFile=data/test.images'のように書きます。\n"
@@ -23,7 +23,7 @@ const string USAGE =
 "設定項目の一覧\n"
 "  testImagesFile テストに使った手書き数字画像のファイル。省略不可\n"
 "  testLabelsFile テストに使ったラベルのファイル。省略不可\n"
-"  onlyMistake    不正解のみを表\示するかどうか。yesまたはno。省略なら" DEFAULT_ONLY_MISTAKE "\n"
+"  onlyMistake    不正解のみを表示するかどうか。yesまたはno。省略なら" DEFAULT_ONLY_MISTAKE "\n"
 "標準入力: テストで出力されたログを入力します。\n"
 ;
 

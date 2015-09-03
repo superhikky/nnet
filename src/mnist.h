@@ -154,7 +154,7 @@ public:
                 size_t minDiffLetterIndex = 0;
                 double minDiff = 512.0;
                 for (auto i = 0; i < PRINTABLE_LETTERS_NUMBER; i++) {
-                    if (i == '\\' - ' ') 
+                    if (i == '\\' - FIRST_PRINTABLE_LETTER) 
                         continue;
                     double diff = 
                         fabs(getIntensity(x, y)     - 
