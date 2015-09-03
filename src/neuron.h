@@ -49,20 +49,34 @@ public:
 
 class Neuron {
 public:
-    virtual vector<shared_ptr<Synapse>> *getOutputSynapses() = 0;
-    virtual vector<shared_ptr<Synapse>> *getInputSynapses() = 0;
-    virtual double getBias() = 0;
-    virtual void setBias(const double &bias) = 0;
-    virtual double getOutput() = 0;
-    virtual void setOutput(const double &output) = 0;
-    virtual double getInput() = 0;
-    virtual void clearInput() = 0;
-    virtual void addInput(const double &addend) = 0;
-    virtual double getError() = 0;
-    virtual void setError(const double &error) = 0;
-    virtual double getBiasGradient() = 0;
-    virtual void clearBiasGradient() = 0;
-    virtual void addBiasGradient(const double &addend) = 0;
+    virtual vector<shared_ptr<Synapse>> *getOutputSynapses() 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual vector<shared_ptr<Synapse>> *getInputSynapses() 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual double getBias() 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual void setBias(const double &bias) 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual double getOutput() 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual void setOutput(const double &output) 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual double getInput() 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual void clearInput() 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual void addInput(const double &addend) 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual double getError() 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual void setError(const double &error) 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual double getBiasGradient() 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual void clearBiasGradient() 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual void addBiasGradient(const double &addend) 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
     
     void read(istream &is) {
         double bias;
@@ -91,32 +105,10 @@ protected:
 public:
     virtual vector<shared_ptr<Synapse>> *getOutputSynapses() override 
         { return &this->outputSynapses; }
-    virtual vector<shared_ptr<Synapse>> *getInputSynapses() override 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
-    virtual double getBias() override 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
-    virtual void setBias(const double &bias) override 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
     virtual double getOutput() override 
         { return this->output; }
     virtual void setOutput(const double &output) override 
         { this->output = output; }
-    virtual double getInput() override 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
-    virtual void clearInput() override 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
-    virtual void addInput(const double &addend) override 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
-    virtual double getError() override 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
-    virtual void setError(const double &error) override 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
-    virtual double getBiasGradient() override 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
-    virtual void clearBiasGradient() override 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
-    virtual void addBiasGradient(const double &addend) override 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
 };
 
 class NotInputNeuron : public Neuron {
@@ -159,11 +151,7 @@ public:
         { this->biasGradient += addend; }
 };
 
-class OutputNeuron : public NotInputNeuron {
-public:
-    virtual vector<shared_ptr<Synapse>> *getOutputSynapses() override 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
-};
+class OutputNeuron : public NotInputNeuron {};
 
 class HiddenNeuron : public NotInputNeuron {
 protected:

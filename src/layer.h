@@ -15,11 +15,12 @@ class Layer {
 protected:
     vector<shared_ptr<Neuron>> neurons;
 public:
-    virtual ActivationFunction *getActivationFunction() = 0;
-    virtual void connect(Layer *sourceLayer) = 0;
-    
     vector<shared_ptr<Neuron>> *getNeurons()  
         { return &this->neurons; }
+    virtual ActivationFunction *getActivationFunction() 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual void connect(Layer *sourceLayer) 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
     
     void read(istream &is) {
         for (auto n : this->neurons) {
@@ -41,11 +42,6 @@ public:
             this->neurons.push_back(newInstance<InputNeuron>());
         }
     }
-    
-    virtual ActivationFunction *getActivationFunction() override 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
-    virtual void connect(Layer *sourceLayer) override 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
 };
 
 class NotInputLayer : public virtual Layer {
