@@ -15,7 +15,6 @@ public:
     virtual double computeWeightsCost(
         vector<shared_ptr<Layer>> *layers, 
         const double              &weightDecayRate, 
-        const size_t              &imagesNumber, 
         const double              &dropoutRatio) = 0;
     virtual double computeDecayedWeight(
         const double &weight, 
@@ -29,7 +28,6 @@ public:
     virtual double computeWeightsCost(
         vector<shared_ptr<Layer>> *layers, 
         const double              &weightDecayRate, 
-        const size_t              &imagesNumber, 
         const double              &dropoutRatio) override
         { return 0.0; }
     virtual double computeDecayedWeight(
@@ -45,7 +43,6 @@ public:
     virtual double computeWeightsCost(
         vector<shared_ptr<Layer>> *layers, 
         const double              &weightDecayRate, 
-        const size_t              &imagesNumber, 
         const double              &dropoutRatio) override
     {
         double absoluteWeightsSum = 0.0;
@@ -57,10 +54,7 @@ public:
                 }
             }
         }
-        return (
-            weightDecayRate / 
-            (double)imagesNumber
-        ) * absoluteWeightsSum;
+        return weightDecayRate * absoluteWeightsSum;
     }
     
     virtual double computeDecayedWeight(
@@ -87,7 +81,6 @@ public:
     virtual double computeWeightsCost(
         vector<shared_ptr<Layer>> *layers, 
         const double              &weightDecayRate, 
-        const size_t              &imagesNumber, 
         const double              &dropoutRatio) override
     {
         double squaredWeightsSum = 0.0;
@@ -99,12 +92,7 @@ public:
                 }
             }
         }
-        return (
-            weightDecayRate / (
-                2.0 * 
-                (double)imagesNumber
-            )
-        ) * squaredWeightsSum;
+        return (weightDecayRate / 2.0) * squaredWeightsSum;
     }
     
     virtual double computeDecayedWeight(

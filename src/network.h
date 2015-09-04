@@ -31,18 +31,18 @@ struct Log {
         size_t evalCorrectAnswersNumber, 
         double evalCost)> doneTrainEpoch;
     function<void(
-        size_t trainCorrectAnswersNumber, 
+        size_t totalTrainCorrectAnswersNumber, 
         double trainCostsAverage, 
-        size_t evalCorrectAnswersNumber, 
+        size_t totalEvalCorrectAnswersNumber, 
         double evalCostsAverage)> doneTrain;
     function<void(
-        size_t inferIndex, 
+        size_t inferImageIndex, 
         size_t imageIndex, 
         size_t label, 
         size_t answer)> doneInferImage;
     function<void(
         size_t correctAnswersNumber, 
-        double cost)> doneInfer;
+        double costsSum)> doneInfer;
     
     Log() : 
         doneTrainEpoch([](size_t, size_t, double, size_t, double) {}), 
@@ -109,13 +109,13 @@ protected:
     }
     
     double computeImageCost(const size_t &label) {
-        double cost = 0.0;
+        double costsSum = 0.0;
         auto outputNeurons = this->layers->back()->getNeurons();
         for (auto i = 0; i < outputNeurons->size(); i++) 
-            cost += this->hyperParameters->costFunction->computeOutputNeuronCost(
+            costsSum += this->hyperParameters->costFunction->computeOutputNeuronCost(
                 (*outputNeurons)[i].get(), 
                 getDesiredOutput(i, label));
-        return cost;
+        return costsSum;
     }
     
     void propagateBackward(const size_t &label) {
@@ -205,14 +205,14 @@ public:
         const size_t   &evalImagesOffset, 
         const size_t   &evalImagesNumber) 
     {
-        size_t trainCorrectAnswersNumber = 0;
-        double trainCostsSum = 0.0;
-        size_t evalCorrectAnswersNumber = 0;
-        double evalCostsSum = 0.0;
+        size_t totalTrainCorrectAnswersNumber = 0;
+        double totalTrainCostsSum = 0.0;
+        size_t totalEvalCorrectAnswersNumber = 0;
+        double totalEvalCostsSum = 0.0;
         vector<size_t> imageIndices(trainImagesNumber);
         for (auto i = 0; i < epochsNumber; i++) {
             size_t epochTrainCorrectAnswersNumber = 0;
-            double trainCost = 0.0;
+            double epochTrainCostsSum = 0.0;
             for (auto j = 0; j < trainImagesNumber; j++) 
                 imageIndices[j] = trainImagesOffset + j;
             for (auto j = 0;; j++) {
@@ -230,18 +230,17 @@ public:
                 size_t label = (*trainingMNIST)[imageIndex]->getLabel();
                 if (getAnswer() == label) 
                     epochTrainCorrectAnswersNumber++;
-                trainCost += computeImageCost(label);
+                epochTrainCostsSum += computeImageCost(label);
                 propagateBackward(label);
                 imageIndices[k] = imageIndices[trainImagesNumber - j - 1];
             }
-            trainCost += this->hyperParameters->regularization->computeWeightsCost(
+            epochTrainCostsSum += this->hyperParameters->regularization->computeWeightsCost(
                 this->layers.get(), 
                 this->hyperParameters->weightDecayRate, 
-                trainImagesNumber, 
                 this->hyperParameters->dropoutRatio);
             
             size_t epochEvalCorrectAnswersNumber = 0;
-            double evalCost = 0.0;
+            double epochEvalCostsSum = 0.0;
             for (auto j = 0; j < evalImagesNumber; j++) {
                 feedForward(
                     (*evalMNIST)[j].get(), 
@@ -249,30 +248,30 @@ public:
                 size_t label = (*evalMNIST)[j]->getLabel();
                 if (getAnswer() == label) 
                     epochEvalCorrectAnswersNumber++;
-                evalCost += computeImageCost(label);
+                epochEvalCostsSum += computeImageCost(label);
             }
-            evalCost += this->hyperParameters->regularization->computeWeightsCost(
+            epochEvalCostsSum += this->hyperParameters->regularization->computeWeightsCost(
                 this->layers.get(), 
                 this->hyperParameters->weightDecayRate, 
-                evalImagesNumber, 
                 this->hyperParameters->dropoutRatio);
             
-            trainCorrectAnswersNumber += epochTrainCorrectAnswersNumber;
-            trainCostsSum += trainCost;
-            evalCorrectAnswersNumber += epochEvalCorrectAnswersNumber;
-            evalCostsSum += evalCost;
             this->log->doneTrainEpoch(
                 i, 
                 epochTrainCorrectAnswersNumber, 
-                trainCost / (double)trainImagesNumber, 
+                epochTrainCostsSum / (double)trainImagesNumber, 
                 epochEvalCorrectAnswersNumber, 
-                evalCost  / (double)evalImagesNumber);
+                epochEvalCostsSum  / (double)evalImagesNumber);
+            
+            totalTrainCorrectAnswersNumber += epochTrainCorrectAnswersNumber;
+            totalTrainCostsSum += epochTrainCostsSum;
+            totalEvalCorrectAnswersNumber += epochEvalCorrectAnswersNumber;
+            totalEvalCostsSum += epochEvalCostsSum;
         }
         this->log->doneTrain(
-            trainCorrectAnswersNumber, 
-            trainCostsSum / (double)epochsNumber / (double)trainImagesNumber, 
-            evalCorrectAnswersNumber, 
-            evalCostsSum  / (double)epochsNumber / (double)evalImagesNumber);
+            totalTrainCorrectAnswersNumber, 
+            totalTrainCostsSum / ((double)epochsNumber * (double)trainImagesNumber), 
+            totalEvalCorrectAnswersNumber, 
+            totalEvalCostsSum  / ((double)epochsNumber * (double)evalImagesNumber));
     }
     
     void infer(
@@ -281,7 +280,7 @@ public:
         const size_t &imagesNumber)
     {
         size_t correctAnswersNumber = 0;
-        double cost = 0.0;
+        double costsSum = 0.0;
         for (auto i = 0; i < imagesNumber; i++) {
             size_t imageIndex = imagesOffset + i;
             feedForward(
@@ -290,21 +289,20 @@ public:
             size_t label = (*mnist)[i]->getLabel();
             if (getAnswer() == label) 
                 correctAnswersNumber++;
-            cost += computeImageCost(label);
+            costsSum += computeImageCost(label);
             this->log->doneInferImage(
                 i, 
                 imageIndex, 
                 label, 
                 getAnswer());
         }
-        cost += this->hyperParameters->regularization->computeWeightsCost(
+        costsSum += this->hyperParameters->regularization->computeWeightsCost(
             this->layers.get(), 
             this->hyperParameters->weightDecayRate, 
-            imagesNumber, 
             this->hyperParameters->dropoutRatio);
         this->log->doneInfer(
             correctAnswersNumber, 
-            cost / (double)imagesNumber);
+            costsSum / (double)imagesNumber);
     }
     
     void read(istream &is) {

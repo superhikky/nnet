@@ -97,22 +97,22 @@ const string USAGE =
 "  doneTrainEpoch 世代の訓練を完了\n"
 "    データの一覧\n"
 "      世代の番号\n"
-"      訓練したときの正解数\n"
-"      訓練したときのコスト\n"
-"      評価したときの正解数\n"
-"      評価したときのコスト\n"
+"      訓練の正解数\n"
+"      訓練のコスト\n"
+"      評価の正解数\n"
+"      評価のコスト\n"
 "  doneTrain      訓練を完了\n"
 "    データの一覧\n"
-"      訓練したときの正解数\n"
-"      訓練したときの平均コスト\n"
-"      評価したときの正解数\n"
-"      評価したときの平均コスト\n"
+"      訓練の総正解数\n"
+"      訓練の平均コスト\n"
+"      評価の総正解数\n"
+"      評価の平均コスト\n"
 "  doneInferImage 画像の推定を完了\n"
 "    データの一覧\n"
-"      推定の番号\n"
+"      画像の推定の番号\n"
 "      画像の番号\n"
-"      ラベル\n"
-"      ネットワークが出力した答え\n"
+"      正解のラベル\n"
+"      ネットワークが推定した答え\n"
 "  doneInfer      推定を完了\n"
 "    データの一覧\n"
 "      正解数\n"
@@ -238,17 +238,17 @@ void train(map<string, string> *conf, HyperParameters *hyperParameters) {
             evalCost                  << endl;
     };
     log->doneTrain = [](
-        const size_t &trainCorrectAnswersNumber, 
+        const size_t &totalTrainCorrectAnswersNumber, 
         const double &trainCostAverage, 
-        const size_t &evalCorrectAnswersNumber, 
+        const size_t &totalEvalCorrectAnswersNumber, 
         const double &evalCostAverage) 
     {
         cout << 
-            "doneTrain"               << "\t" << 
-            trainCorrectAnswersNumber << "\t" << 
-            trainCostAverage          << "\t" << 
-            evalCorrectAnswersNumber  << "\t" << 
-            evalCostAverage           << endl;
+            "doneTrain"                    << "\t" << 
+            totalTrainCorrectAnswersNumber << "\t" << 
+            trainCostAverage               << "\t" << 
+            totalEvalCorrectAnswersNumber  << "\t" << 
+            evalCostAverage                << endl;
     };
     net->train(
         s2ul((*conf)["epochsNumber"]), 
@@ -298,14 +298,14 @@ void infer(map<string, string> *conf, HyperParameters *hyperParameters) {
     net->read(*parametersIFS);
     
     log->doneInferImage = [](
-        const size_t &inferIndex, 
+        const size_t &inferImageIndex, 
         const size_t &imageIndex, 
         const size_t &label, 
         const size_t &answer) 
     {
         cout << 
             "doneInferImage" << "\t" << 
-            inferIndex       << "\t" << 
+            inferImageIndex  << "\t" << 
             imageIndex       << "\t" << 
             label            << "\t" << 
             answer           << endl;
