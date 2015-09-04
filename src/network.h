@@ -251,7 +251,7 @@ public:
                     epochEvalCorrectAnswersNumber++;
                 evalCost += computeImageCost(label);
             }
-            trainCost += this->hyperParameters->regularization->computeWeightsCost(
+            evalCost += this->hyperParameters->regularization->computeWeightsCost(
                 this->layers.get(), 
                 this->hyperParameters->weightDecayRate, 
                 evalImagesNumber, 
