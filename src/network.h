@@ -351,11 +351,6 @@ protected:
         return newInstance<OutputLayer>(newInstance<SigmoidActivationFunction>());
     }
 public:
-    static NetworkBuilder *getInstance() {
-        static NetworkBuilder instance;
-        return &instance;
-    }
-    
     shared_ptr<Network> build(
         istream               *is, 
         HyperParameters       *hyperParameters, 
@@ -392,6 +387,11 @@ public:
             }
         }
         return newInstance<Network>(layers, hyperParameters, log);
+    }
+    
+    static NetworkBuilder *getInstance() {
+        static NetworkBuilder instance;
+        return &instance;
     }
 };
 
