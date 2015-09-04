@@ -15,6 +15,14 @@
 
 using namespace std;
 
+struct HyperParameters {
+    CostFunction   *costFunction;
+    Regularization *regularization;
+    double          weightDecayRate;
+    double          dropoutRatio;
+    double          learningRate;
+};
+
 struct Log {
     function<void(
         size_t epochIndex, 
@@ -28,33 +36,34 @@ struct Log {
         size_t evalCorrectAnswersNumber, 
         double evalCostsAverage)> doneTrain;
     function<void(
-        size_t testIndex, 
+        size_t inferIndex, 
         size_t imageIndex, 
         size_t label, 
-        size_t answer)> doneTestImage;
+        size_t answer)> doneInferImage;
     function<void(
         size_t correctAnswersNumber, 
-        double cost)> doneTest;
+        double cost)> doneInfer;
     
     Log() : 
         doneTrainEpoch([](size_t, size_t, double, size_t, double) {}), 
         doneTrain([](size_t, double, size_t, double) {}), 
-        doneTestImage([](size_t, size_t, size_t, size_t) {}), 
-        doneTest([](size_t, double) {}) {}
+        doneInferImage([](size_t, size_t, size_t, size_t) {}), 
+        doneInfer([](size_t, double) {}) {}
 };
 
 class Network {
 protected:
-    shared_ptr<vector<shared_ptr<Layer>>> layers;
-    CostFunction                          *costFunction;
-    double                                learningRate;
-    Regularization                        *regularization;
-    double                                weightDecayRate;
-    shared_ptr<Log>                       log;
+    shared_ptr<vector<shared_ptr<Layer>>>  layers;
+    HyperParameters                       *hyperParameters;
+    shared_ptr<Log>                        log;
     
     void beginBatch() {
+        for (auto l = this->layers->begin() + 1; l < this->layers->end() - 1; l++) 
+            (*l)->dropNeurons(this->hyperParameters->dropoutRatio);
         for (auto l = this->layers->begin() + 1; l != this->layers->end(); l++) {
             for (auto n : (*(*l)->getNeurons())) {
+                if (n->wasDropped()) 
+                    continue;
                 n->clearBiasGradient();
                 for (auto s : *n->getInputSynapses()) 
                     s->clearWeightGradient();
@@ -62,17 +71,25 @@ protected:
         }
     }
     
-    void feedForward(Image *image) {
+    void feedForward(Image *image, const double &outputRatio) {
         auto inputNeurons = this->layers->front()->getNeurons();
         for (auto i = 0; i < IMAGE_AREA; i++) 
             (*inputNeurons)[i]->setOutput((double)(*image->getIntensities())[i] / 255.0);
         for (auto l = this->layers->begin() + 1; l != this->layers->end(); l++) {
             for (auto n : *(*l)->getNeurons()) {
+                if (n->wasDropped()) 
+                    continue;
                 n->clearInput();
-                for (auto s : *n->getInputSynapses()) 
-                    n->addInput(s->getWeight() * s->getSource()->getOutput());
+                for (auto s : *n->getInputSynapses()) {
+                    auto src = s->getSource();
+                    if (src->wasDropped()) 
+                        continue;
+                    n->addInput(s->getWeight() * src->getOutput());
+                }
                 n->addInput(n->getBias());
-                n->setOutput((*l)->getActivationFunction()->computeOutput(n->getInput()));
+                n->setOutput(
+                    (*l)->getActivationFunction()->computeOutput(n->getInput()) * 
+                    outputRatio);
             }
         }
     }
@@ -95,35 +112,47 @@ protected:
         double cost = 0.0;
         auto outputNeurons = this->layers->back()->getNeurons();
         for (auto i = 0; i < outputNeurons->size(); i++) 
-            cost += this->costFunction->computeOutputNeuronCost(
+            cost += this->hyperParameters->costFunction->computeOutputNeuronCost(
                 (*outputNeurons)[i].get(), 
                 getDesiredOutput(i, label));
         return cost;
     }
     
-    void propagateBackward(CostFunction *costFunction, const size_t &label) {
+    void propagateBackward(const size_t &label) {
         for (auto l = this->layers->rbegin(); l != this->layers->rend() - 1; l++) {
             if (l == this->layers->rbegin()) {
                 for (auto i = 0; i < (*l)->getNeurons()->size(); i++) {
                     auto n = (*(*l)->getNeurons())[i];
-                    n->setError(costFunction->computeOutputNeuronError(
+                    n->setError(this->hyperParameters->costFunction->computeOutputNeuronError(
                         n.get(), 
                         (*l)->getActivationFunction(), 
                         getDesiredOutput(i, label)));
                 }
             } else {
                 for (auto n : (*(*l)->getNeurons())) {
+                    if (n->wasDropped()) 
+                        continue;
                     double error = 0.0;
-                    for (auto s : *n->getOutputSynapses()) 
-                        error += s->getWeight() * s->getDestination()->getError();
+                    for (auto s : *n->getOutputSynapses()) {
+                        auto dest = s->getDestination();
+                        if (dest->wasDropped()) 
+                            continue;
+                        error += s->getWeight() * dest->getError();
+                    }
                     error *= (*l)->getActivationFunction()->computeDifferentialOutput(n->getInput());
                     n->setError(error);
                 }
             }
             for (auto n : (*(*l)->getNeurons())) {
+                if (n->wasDropped()) 
+                    continue;
                 n->addBiasGradient(n->getError());
-                for (auto s : *n->getInputSynapses()) 
-                    s->addWeightGradient(s->getSource()->getOutput() * n->getError());
+                for (auto s : *n->getInputSynapses()) {
+                    auto src = s->getSource();
+                    if (src->wasDropped()) 
+                        continue;
+                    s->addWeightGradient(src->getOutput() * n->getError());
+                }
             }
         }
     }
@@ -131,19 +160,23 @@ protected:
     void endBatch(const size_t &imagesNumber, const size_t &batchSize) {
         for (auto l = this->layers->begin() + 1; l != this->layers->end(); l++) {
             for (auto n : (*(*l)->getNeurons())) {
+                if (n->wasDropped()) 
+                    continue;
                 n->setBias(
                     n->getBias() - 
-                    this->learningRate * n->getBiasGradient() / batchSize);
+                    this->hyperParameters->learningRate * n->getBiasGradient() / batchSize);
                 for (auto s : *n->getInputSynapses()) 
                     s->setWeight(
-                        this->regularization->computeDecayedWeight(
+                        this->hyperParameters->regularization->computeDecayedWeight(
                             s->getWeight(), 
-                            this->learningRate, 
-                            this->weightDecayRate, 
+                            this->hyperParameters->learningRate, 
+                            this->hyperParameters->weightDecayRate, 
                             imagesNumber) - 
-                        this->learningRate * s->getWeightGradient() / batchSize);
+                        this->hyperParameters->learningRate * s->getWeightGradient() / batchSize);
             }
         }
+        for (auto l = this->layers->begin() + 1; l < this->layers->end() - 1; l++) 
+            (*l)->restoreNeurons();
     }
     
     static double getDesiredOutput(const size_t &index, const size_t &label) {
@@ -152,16 +185,10 @@ protected:
 public:
     Network(
         const shared_ptr<vector<shared_ptr<Layer>>> &layers, 
-        CostFunction                                *costFunction, 
-        const double                                &learningRate, 
-        Regularization                              *regularization, 
-        const double                                &weightDecayRate, 
+        HyperParameters                             *hyperParameters, 
         const shared_ptr<Log>                       &log) : 
             layers         (layers), 
-            costFunction   (costFunction), 
-            learningRate   (learningRate), 
-            regularization (regularization), 
-            weightDecayRate(weightDecayRate), 
+            hyperParameters(hyperParameters), 
             log            (log) 
     {
         for (auto i = 1; i < this->layers->size(); i++) 
@@ -169,14 +196,14 @@ public:
     }
     
     void train(
-        const size_t &epochsNumber, 
-        const size_t &batchSize, 
-        MNIST        *trainingMNIST, 
-        const size_t &trainImagesOffset, 
-        const size_t &trainImagesNumber, 
-        MNIST        *evalMNIST, 
-        const size_t &evalImagesOffset, 
-        const size_t &evalImagesNumber)
+        const size_t   &epochsNumber, 
+        const size_t   &batchSize, 
+        MNIST          *trainingMNIST, 
+        const size_t   &trainImagesOffset, 
+        const size_t   &trainImagesNumber, 
+        MNIST          *evalMNIST, 
+        const size_t   &evalImagesOffset, 
+        const size_t   &evalImagesNumber) 
     {
         size_t trainCorrectAnswersNumber = 0;
         double trainCostsSum = 0.0;
@@ -199,32 +226,36 @@ public:
                 size_t k = Random::getInstance()->uniformDistribution<size_t>(
                     0, trainImagesNumber - j - 1);
                 size_t imageIndex = imageIndices[k];
-                feedForward((*trainingMNIST)[imageIndex].get());
+                feedForward((*trainingMNIST)[imageIndex].get(), 1.0);
                 size_t label = (*trainingMNIST)[imageIndex]->getLabel();
                 if (getAnswer() == label) 
                     epochTrainCorrectAnswersNumber++;
                 trainCost += computeImageCost(label);
-                propagateBackward(costFunction, label);
+                propagateBackward(label);
                 imageIndices[k] = imageIndices[trainImagesNumber - j - 1];
             }
-            trainCost += this->regularization->computeWeightsCost(
+            trainCost += this->hyperParameters->regularization->computeWeightsCost(
                 this->layers.get(), 
-                this->weightDecayRate, 
-                trainImagesNumber);
+                this->hyperParameters->weightDecayRate, 
+                trainImagesNumber, 
+                this->hyperParameters->dropoutRatio);
             
             size_t epochEvalCorrectAnswersNumber = 0;
             double evalCost = 0.0;
             for (auto j = 0; j < evalImagesNumber; j++) {
-                feedForward((*evalMNIST)[j].get());
+                feedForward(
+                    (*evalMNIST)[j].get(), 
+                    1.0 - this->hyperParameters->dropoutRatio);
                 size_t label = (*evalMNIST)[j]->getLabel();
                 if (getAnswer() == label) 
                     epochEvalCorrectAnswersNumber++;
                 evalCost += computeImageCost(label);
             }
-            trainCost += this->regularization->computeWeightsCost(
+            trainCost += this->hyperParameters->regularization->computeWeightsCost(
                 this->layers.get(), 
-                this->weightDecayRate, 
-                evalImagesNumber);
+                this->hyperParameters->weightDecayRate, 
+                evalImagesNumber, 
+                this->hyperParameters->dropoutRatio);
             
             trainCorrectAnswersNumber += epochTrainCorrectAnswersNumber;
             trainCostsSum += trainCost;
@@ -244,7 +275,7 @@ public:
             evalCostsSum  / (double)epochsNumber / (double)evalImagesNumber);
     }
     
-    void test(
+    void infer(
         MNIST        *mnist, 
         const size_t &imagesOffset, 
         const size_t &imagesNumber)
@@ -253,22 +284,25 @@ public:
         double cost = 0.0;
         for (auto i = 0; i < imagesNumber; i++) {
             size_t imageIndex = imagesOffset + i;
-            feedForward((*mnist)[i].get());
+            feedForward(
+                (*mnist)[i].get(), 
+                1.0 - this->hyperParameters->dropoutRatio);
             size_t label = (*mnist)[i]->getLabel();
             if (getAnswer() == label) 
                 correctAnswersNumber++;
             cost += computeImageCost(label);
-            this->log->doneTestImage(
+            this->log->doneInferImage(
                 i, 
                 imageIndex, 
                 label, 
                 getAnswer());
         }
-        cost += this->regularization->computeWeightsCost(
+        cost += this->hyperParameters->regularization->computeWeightsCost(
             this->layers.get(), 
-            this->weightDecayRate, 
-            imagesNumber);
-        this->log->doneTest(
+            this->hyperParameters->weightDecayRate, 
+            imagesNumber, 
+            this->hyperParameters->dropoutRatio);
+        this->log->doneInfer(
             correctAnswersNumber, 
             cost / (double)imagesNumber);
     }
@@ -286,10 +320,9 @@ public:
 
 class NetworkBuilder {
 protected:
-    using MakeLayerProc = function<shared_ptr<Layer>(vector<string> *)>;
-    
     NetworkBuilder() = default;
     
+    using MakeLayerProc = function<shared_ptr<Layer>(vector<string> *)>;
     static map<string, MakeLayerProc> *getMakeLayerProcs() {
         static map<string, MakeLayerProc> MAKE_LAYER_PROCS = {
             {"input",          &makeInputLayer}, 
@@ -306,8 +339,11 @@ protected:
     static shared_ptr<Layer> makeFullyConnectedHiddenLayer(vector<string> *tokens) {
         if (tokens->size() < 2) 
             throw describe(__FILE__, "(", __LINE__, "): " , "ニューロンの数を書いてください。");
+        size_t neuronsNumber = s2ul((*tokens)[1]);
+        if (neuronsNumber == 0) 
+            throw describe(__FILE__, "(", __LINE__, "): " , "ニューロンは1個以上でなければなりません。");
         return newInstance<FullyConnectedHiddenLayer>(
-            s2ul((*tokens)[1]), 
+            neuronsNumber, 
             newInstance<SigmoidActivationFunction>());
     }
     
@@ -322,10 +358,7 @@ public:
     
     shared_ptr<Network> build(
         istream               *is, 
-        CostFunction          *costFunction, 
-        const double          &learningRate, 
-        Regularization        *regularization, 
-        const double          &weightDecayRate, 
+        HyperParameters       *hyperParameters, 
         const shared_ptr<Log> &log) 
     {
         auto layers = newInstance<vector<shared_ptr<Layer>>>();
@@ -358,13 +391,7 @@ public:
                     throw describe(__FILE__, "(", __LINE__, "): " , "中間の層は隠れ層でなければなりません。");
             }
         }
-        return newInstance<Network>(
-            layers, 
-            costFunction, 
-            learningRate, 
-            regularization, 
-            weightDecayRate, 
-            log);
+        return newInstance<Network>(layers, hyperParameters, log);
     }
 };
 

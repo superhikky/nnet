@@ -14,8 +14,8 @@ class Synapse {
 protected:
     Neuron *source;
     Neuron *destination;
-    double weight;
-    double weightGradient;
+    double  weight;
+    double  weightGradient;
 public:
     Synapse(Neuron *source, Neuron *destination) : 
         source(source), 
@@ -77,6 +77,12 @@ public:
         { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
     virtual void addBiasGradient(const double &addend) 
         { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual bool wasDropped() 
+        { return false; }
+    virtual void drop() 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    virtual void restore() 
+        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
     
     void read(istream &is) {
         double bias;
@@ -112,11 +118,11 @@ public:
 class NotInputNeuron : public Neuron {
 protected:
     vector<shared_ptr<Synapse>> inputSynapses;
-    double bias;
-    double output;
-    double input;
-    double error;
-    double biasGradient;
+    double                      bias;
+    double                      output;
+    double                      input;
+    double                      error;
+    double                      biasGradient;
     
     NotInputNeuron() : 
         bias(Random::getInstance()->normalDistribution<double>(0.0, 1.0)) {}
@@ -154,9 +160,17 @@ class OutputNeuron : public NotInputNeuron {};
 class HiddenNeuron : public NotInputNeuron {
 protected:
     vector<shared_ptr<Synapse>> outputSynapses;
+    bool                        dropped;
 public:
+    HiddenNeuron() : dropped(false) {}
     virtual vector<shared_ptr<Synapse>> *getOutputSynapses() override 
         { return &this->outputSynapses; }
+    virtual bool wasDropped() override 
+        { return this->dropped; }
+    virtual void drop() override 
+        { this->dropped = true; }
+    virtual void restore() override 
+        { this->dropped = false; }
 };
 
 #endif

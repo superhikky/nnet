@@ -12,22 +12,23 @@
 
 using namespace std;
 
+#define DEFAULT_COST_FUNCTION       "quadratic"
+#define DEFAULT_DROPOUT_RATIO       "0.0"
 #define DEFAULT_TRAIN_IMAGES_OFFSET "0"
 #define DEFAULT_TRAIN_IMAGES_NUMBER "1000"
 #define DEFAULT_EVAL_IMAGES_OFFSET  "0"
 #define DEFAULT_EVAL_IMAGES_NUMBER  "100"
-#define DEFAULT_TEST_IMAGES_OFFSET  "0"
-#define DEFAULT_TEST_IMAGES_NUMBER  "100"
+#define DEFAULT_READ_PARAMETERS     "yes"
 #define DEFAULT_EPOCHS_NUMBER       "10"
 #define DEFAULT_BATCH_SIZE          "10"
-#define DEFAULT_COST_FUNCTION       "crossEntropy"
-#define DEFAULT_LEARNING_RATE       "0.5"
-#define DEFAULT_REGULARIZATION      "l2"
+#define DEFAULT_LEARNING_RATE       "5.0"
+#define DEFAULT_REGULARIZATION      "null"
 #define DEFAULT_WEIGHT_DECAY_RATE   "0.1"
-#define DEFAULT_READ_PARAMETERS     "yes"
+#define DEFAULT_INFER_IMAGES_OFFSET "0"
+#define DEFAULT_INFER_IMAGES_NUMBER "100"
 
 const string USAGE = 
-"nnetはニューラルネットワークの作成、訓練、テストを行います。\n"
+"nnetはニューラルネットワークを作り、手書き数字画像による訓練、推定を行います。\n"
 "使い方: ./nnet 設定... 命令\n"
 "  命令には実行する処理を指定します。\n"
 "  設定の書式は'項目名=内容'です。\n"
@@ -38,15 +39,15 @@ const string USAGE =
 "  空白行と'#'で始まる行は無視します。\n"
 "命令の一覧\n"
 "  train ネットワークを訓練する\n"
-"  test  ネットワークをテストする\n"
-"train命令とtest命令に共通の設定項目の一覧\n"
-"  networkFile       ネットワークを定義したファイル。\n"
-"                    省略ならデフォルトのネットワーク\n"
-"  parametersFile    パラメータのファイル。test命令では省略不可\n"
-"  costFunction      コスト関数。省略なら" DEFAULT_COST_FUNCTION "\n"
-"  learningRate      学習率。省略なら" DEFAULT_LEARNING_RATE "\n"
-"  regularization    正規化。省略なら" DEFAULT_REGULARIZATION "\n"
-"  weightDecayRate   重み補正率。省略なら" DEFAULT_WEIGHT_DECAY_RATE "\n"
+"  infer 画像のラベルを推定する\n"
+"train命令とinfer命令に共通の設定項目の一覧\n"
+"  networkFile     ネットワークを定義したファイル。\n"
+"                  省略ならデフォルトのネットワーク\n"
+"  parametersFile  パラメータのファイル。infer命令では省略不可\n"
+"  costFunction    コスト関数。省略なら" DEFAULT_COST_FUNCTION "\n"
+"  regularization  正則化。省略なら" DEFAULT_REGULARIZATION "\n"
+"  weightDecayRate 重み補正率。省略なら" DEFAULT_WEIGHT_DECAY_RATE "\n"
+"  dropoutRatio    ドロップアウト率。>=0.0 && <= 0.0。省略なら" DEFAULT_DROPOUT_RATIO "\n"
 "train命令の設定項目の一覧\n"
 "  trainImagesFile   訓練に使う手書き数字画像のファイル。省略不可\n"
 "  trainLabelsFile   訓練に使うラベルのファイル。省略不可\n"
@@ -59,13 +60,14 @@ const string USAGE =
 "  readParameters    パラメータを読み込むかどうか。yesまたはno。省略なら" DEFAULT_READ_PARAMETERS "\n"
 "  epochsNumber      世代の数。省略なら" DEFAULT_EPOCHS_NUMBER "\n"
 "  batchSize         バッチの大きさ。省略なら" DEFAULT_BATCH_SIZE "\n"
-"test命令の設定項目の一覧\n"
-"  networkFile      ネットワークを定義したファイル。\n"
-"                   省略ならデフォルトのネットワーク\n"
-"  testImagesFile   テストに使う手書き数字画像のファイル。省略不可\n"
-"  testLabelsFile   テストに使うラベルのファイル。省略不可\n"
-"  testImagesOffset テストに使う画像のオフセット。省略なら" DEFAULT_TEST_IMAGES_OFFSET "\n"
-"  testImagesNumber テストに使う画像の数。省略なら" DEFAULT_TEST_IMAGES_NUMBER "\n"
+"  learningRate      学習率。省略なら" DEFAULT_LEARNING_RATE "\n"
+"infer命令の設定項目の一覧\n"
+"  networkFile       ネットワークを定義したファイル。\n"
+"                    省略ならデフォルトのネットワーク\n"
+"  inferImagesFile   推定に使う手書き数字画像のファイル。省略不可\n"
+"  inferLabelsFile   推定に使うラベルのファイル。省略不可\n"
+"  inferImagesOffset 推定に使う画像のオフセット。省略なら" DEFAULT_INFER_IMAGES_OFFSET "\n"
+"  inferImagesNumber 推定に使う画像の数。省略なら" DEFAULT_INFER_IMAGES_NUMBER "\n"
 "ネットワークの定義\n"
 "  行ごとに層を定義します。書式は'層の種類 引数...'です。\n"
 "  例えば'fullyConnected 30'のように書きます。\n"
@@ -85,10 +87,10 @@ const string USAGE =
 "コスト関数の一覧\n"
 "  quadratic    平均二乗誤差\n"
 "  crossEntropy クロスエントロピー\n"
-"正規化の一覧\n"
+"正則化の一覧\n"
 "  null なし\n"
-"  l1   L1 正規化\n"
-"  l2   L2 正規化\n"
+"  l1   L1 正則化\n"
+"  l2   L2 正則化\n"
 "標準出力: ログを出力します。\n"
 "  行ごとの書式は'ログの種類 データ...'です。タブで区切ります。\n"
 "ログの種類の一覧\n"
@@ -105,22 +107,35 @@ const string USAGE =
 "      訓練したときの平均コスト\n"
 "      評価したときの正解数\n"
 "      評価したときの平均コスト\n"
-"  doneTestImage  画像のテストを完了\n"
+"  doneInferImage 画像の推定を完了\n"
 "    データの一覧\n"
-"      テストの番号\n"
+"      推定の番号\n"
 "      画像の番号\n"
 "      ラベル\n"
 "      ネットワークが出力した答え\n"
-"  doneTest       テストを完了\n"
+"  doneInfer      推定を完了\n"
 "    データの一覧\n"
 "      正解数\n"
 "      コスト\n"
 ;
 
-void train(const shared_ptr<map<string, string>> &conf);
-void test(const shared_ptr<map<string, string>> &conf);
-using CommandProc = function<void(shared_ptr<map<string, string>>)>;
-const map<string, CommandProc> *getCommandProcs();
+void train(
+    const shared_ptr<map<string, string>> &conf, 
+    HyperParameters *hyperParameters);
+void infer(
+    const shared_ptr<map<string, string>> &conf, 
+    HyperParameters *hyperParameters);
+
+using CommandProc = function<void(
+    shared_ptr<map<string, string>>, 
+    HyperParameters *)>;
+inline const map<string, CommandProc> *getCommandProcs() {
+    static const map<string, CommandProc> COMMAND_PROCS = {
+        {"train", &train}, 
+        {"infer", &infer}, 
+    };
+    return &COMMAND_PROCS;
+}
 
 int main(int argc, char **argv) {
     int result = 0;
@@ -133,25 +148,33 @@ int main(int argc, char **argv) {
         if (getCommandProcs()->count(command) == 0) 
             throw describe(__FILE__, "(", __LINE__, "): " , "'", command, "'という命令はありません。");
         auto conf = newInstance<map<string, string>>();
+        (*conf)["costFunction"]      = DEFAULT_COST_FUNCTION;
+        (*conf)["regularization"]    = DEFAULT_REGULARIZATION;
+        (*conf)["weightDecayRate"]   = DEFAULT_WEIGHT_DECAY_RATE;
+        (*conf)["dropoutRatio"]      = DEFAULT_DROPOUT_RATIO;
         (*conf)["trainImagesOffset"] = DEFAULT_TRAIN_IMAGES_OFFSET;
         (*conf)["trainImagesNumber"] = DEFAULT_TRAIN_IMAGES_NUMBER;
-        (*conf)["evalImagesOffset"] =  DEFAULT_EVAL_IMAGES_OFFSET;
-        (*conf)["evalImagesNumber"] =  DEFAULT_EVAL_IMAGES_NUMBER;
-        (*conf)["testImagesOffset"] =  DEFAULT_TEST_IMAGES_OFFSET;
-        (*conf)["testImagesNumber"] =  DEFAULT_TEST_IMAGES_NUMBER;
-        (*conf)["readParameters"] =    DEFAULT_READ_PARAMETERS;
-        (*conf)["epochsNumber"] =      DEFAULT_EPOCHS_NUMBER;
-        (*conf)["batchSize"] =         DEFAULT_BATCH_SIZE;
-        (*conf)["costFunction"] =      DEFAULT_COST_FUNCTION;
-        (*conf)["learningRate"] =      DEFAULT_LEARNING_RATE;
-        (*conf)["regularization"] =    DEFAULT_REGULARIZATION;
-        (*conf)["weightDecayRate"] =   DEFAULT_WEIGHT_DECAY_RATE;
+        (*conf)["evalImagesOffset"]  = DEFAULT_EVAL_IMAGES_OFFSET;
+        (*conf)["evalImagesNumber"]  = DEFAULT_EVAL_IMAGES_NUMBER;
+        (*conf)["readParameters"]    = DEFAULT_READ_PARAMETERS;
+        (*conf)["epochsNumber"]      = DEFAULT_EPOCHS_NUMBER;
+        (*conf)["batchSize"]         = DEFAULT_BATCH_SIZE;
+        (*conf)["learningRate"]      = DEFAULT_LEARNING_RATE;
+        (*conf)["inferImagesOffset"] = DEFAULT_INFER_IMAGES_OFFSET;
+        (*conf)["inferImagesNumber"] = DEFAULT_INFER_IMAGES_NUMBER;
         setConfig(argc - 2, argv + 1, conf.get());
         if (getCostFunctions()->count((*conf)["costFunction"]) == 0) 
             throw describe(__FILE__, "(", __LINE__, "): " , "'", (*conf)["costFunction"], "'というコスト関数はありません。");
         if (getRegularizations()->count((*conf)["regularization"]) == 0) 
-            throw describe(__FILE__, "(", __LINE__, "): " , "'", (*conf)["regularization"], "'という正規化はありません。");
-        getCommandProcs()->at(command)(conf);
+            throw describe(__FILE__, "(", __LINE__, "): " , "'", (*conf)["regularization"], "'という正則化はありません。");
+        if (s2d((*conf)["dropoutRatio"]) < 0.0 || s2d((*conf)["dropoutRatio"]) > 1.0) 
+            throw describe(__FILE__, "(", __LINE__, "): " , "ドロップアウト率は0.0以上、かつ1.0以下でなければなりません。");
+        auto hyperParameters = newInstance<HyperParameters>();
+        hyperParameters->costFunction    = getCostFunctions()->at((*conf)["costFunction"]).get();
+        hyperParameters->regularization  = getRegularizations()->at((*conf)["regularization"]).get();
+        hyperParameters->weightDecayRate = s2d((*conf)["weightDecayRate"]);
+        hyperParameters->dropoutRatio    = s2d((*conf)["dropoutRatio"]);
+        getCommandProcs()->at(command)(conf, hyperParameters.get());
     } catch (const string &message) {
         cerr << message << endl;
         result = 1;
@@ -159,7 +182,10 @@ int main(int argc, char **argv) {
     return result;
 }
 
-void train(const shared_ptr<map<string, string>> &conf) {
+void train(
+    const shared_ptr<map<string, string>> &conf, 
+    HyperParameters *hyperParameters) 
+{
     if ((*conf)["trainImagesFile"].empty()) 
         throw describe(__FILE__, "(", __LINE__, "): " , "'trainImagesFile'を設定してください。");
     if ((*conf)["trainLabelsFile"].empty()) 
@@ -189,13 +215,11 @@ void train(const shared_ptr<map<string, string>> &conf) {
     shared_ptr<istream> networkIS;
     if (!(*conf)["networkFile"].empty()) 
         networkIS = openFile<ifstream>((*conf)["networkFile"], ios::in);
+    hyperParameters->learningRate = s2d((*conf)["learningRate"]);
     auto log = newInstance<Log>();
     auto net = NetworkBuilder::getInstance()->build(
         networkIS.get(), 
-        getCostFunctions()->at((*conf)["costFunction"]).get(), 
-        s2d((*conf)["learningRate"]), 
-        getRegularizations()->at((*conf)["regularization"]).get(), 
-        s2d((*conf)["weightDecayRate"]), 
+        hyperParameters, 
         log);
     if (!(*conf)["parametersFile"].empty() && 
         fileExist((*conf)["parametersFile"]) && 
@@ -253,19 +277,22 @@ void train(const shared_ptr<map<string, string>> &conf) {
     }
 }
 
-void test(const shared_ptr<map<string, string>> &conf) {
-    if ((*conf)["testImagesFile"].empty()) 
-        throw describe(__FILE__, "(", __LINE__, "): " , "'testImagesFile'を設定してください。");
-    if ((*conf)["testLabelsFile"].empty()) 
-        throw describe(__FILE__, "(", __LINE__, "): " , "'testLabelsFile'を設定してください。");
+void infer(
+    const shared_ptr<map<string, string>> &conf, 
+    HyperParameters *hyperParameters) 
+{
+    if ((*conf)["inferImagesFile"].empty()) 
+        throw describe(__FILE__, "(", __LINE__, "): " , "'inferImagesFile'を設定してください。");
+    if ((*conf)["inferLabelsFile"].empty()) 
+        throw describe(__FILE__, "(", __LINE__, "): " , "'inferLabelsFile'を設定してください。");
     if ((*conf)["parametersFile"].empty()) 
         throw describe(__FILE__, "(", __LINE__, "): " , "'parametersFile'を設定してください。");
     
     auto imagesIFS = openFile<ifstream>(
-        (*conf)["testImagesFile"], 
+        (*conf)["inferImagesFile"], 
         ios::in | ios::binary);
     auto labelsIFS = openFile<ifstream>(
-        (*conf)["testLabelsFile"], 
+        (*conf)["inferLabelsFile"], 
         ios::in | ios::binary);
     auto mnist = readMNIST(*imagesIFS, *labelsIFS);
     
@@ -275,48 +302,37 @@ void test(const shared_ptr<map<string, string>> &conf) {
     auto log = newInstance<Log>();
     auto net = NetworkBuilder::getInstance()->build(
         networkIS.get(), 
-        getCostFunctions()->at((*conf)["costFunction"]).get(), 
-        s2d((*conf)["learningRate"]), 
-        getRegularizations()->at((*conf)["regularization"]).get(), 
-        s2d((*conf)["weightDecayRate"]), 
+        hyperParameters, 
         log);
     auto parametersIFS = openFile<ifstream>(
         (*conf)["parametersFile"], 
         ios::in | ios::binary);
     net->read(*parametersIFS);
     
-    log->doneTestImage = [](
-        const size_t &testIndex, 
+    log->doneInferImage = [](
+        const size_t &inferIndex, 
         const size_t &imageIndex, 
         const size_t &label, 
         const size_t &answer) 
     {
         cout << 
-            "doneTestImage" << "\t" << 
-            testIndex       << "\t" << 
-            imageIndex      << "\t" << 
-            label           << "\t" << 
-            answer          << endl;
+            "doneInferImage" << "\t" << 
+            inferIndex       << "\t" << 
+            imageIndex       << "\t" << 
+            label            << "\t" << 
+            answer           << endl;
     };
-    log->doneTest = [](
+    log->doneInfer = [](
         const size_t &correctAnswersNumber, 
         const double &cost) 
     {
         cout << 
-            "doneTest"           << "\t" << 
+            "doneInfer"          << "\t" << 
             correctAnswersNumber << "\t" << 
             cost                 << endl;
     };
-    net->test(
+    net->infer(
         mnist.get(), 
-        s2ul((*conf)["testImagesOffset"]), 
-        s2ul((*conf)["testImagesNumber"]));
-}
-
-const map<string, CommandProc> *getCommandProcs() {
-    static const map<string, CommandProc> COMMAND_PROCS = {
-        {"train", &train}, 
-        {"test",  &test}, 
-    };
-    return &COMMAND_PROCS;
+        s2ul((*conf)["inferImagesOffset"]), 
+        s2ul((*conf)["inferImagesNumber"]));
 }

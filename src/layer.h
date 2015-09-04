@@ -22,6 +22,24 @@ public:
     virtual void connect(Layer *sourceLayer) 
         { throw describe(__FILE__, "(", __LINE__, "): ", "•s³‚ÈŒÄ‚Ño‚µ‚Å‚·B"); }
     
+    void dropNeurons(const double &dropoutRate) {
+        size_t number = (double)getNeurons()->size() * dropoutRate;
+        vector<size_t> neuronsIndices(getNeurons()->size());
+        for (auto i = 0; i < getNeurons()->size(); i++) 
+            neuronsIndices[i] = i;
+        for (auto i = 0; i < number; i++) {
+            size_t j = Random::getInstance()->uniformDistribution<size_t>(
+                0, getNeurons()->size() - i - 1);
+            (*getNeurons())[neuronsIndices[j]]->drop();
+            neuronsIndices[j] = neuronsIndices[getNeurons()->size() - i - 1];
+        }
+    }
+    
+    void restoreNeurons() {
+        for (auto n : *getNeurons()) 
+            n->restore();
+    }
+    
     void read(istream &is) {
         for (auto n : this->neurons) 
             n->read(is);

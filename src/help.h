@@ -1,6 +1,7 @@
 #ifndef HELP_H
 #define HELP_H
 
+#include <chrono>
 #include <cstdlib>
 #include <fstream>
 #include <iostream>
@@ -94,9 +95,9 @@ inline void setConfig(
 }
 
 inline void setConfig(
-    const int           &argc, 
+    const int            &argc, 
     char                **argv, 
-    map<string, string> *config) 
+    map<string, string>  *config) 
 {
     for (auto i = 0; i < argc; i++) {
         string arg(argv[i]);
@@ -112,18 +113,19 @@ inline void setConfig(
 
 class Random {
 protected:
-    random_device device;
-    mt19937 mt;
-    Random() : mt(this->device()) {}
+    mt19937 engine;
+    
+    Random() : 
+        engine(chrono::system_clock::now().time_since_epoch().count()) {}
 public:
     template <typename Type> 
     Type normalDistribution(const Type &a, const Type &b) {
-        return normal_distribution<>(a, b)(this->mt);
+        return normal_distribution<>(a, b)(this->engine);
     }
     
     template <typename Type> 
     Type uniformDistribution(const Type &a, const Type &b) {
-        return uniform_int_distribution<>(a, b)(this->mt);
+        return uniform_int_distribution<>(a, b)(this->engine);
     }
     
     static Random *getInstance() {
@@ -136,7 +138,7 @@ inline void tokenize(
     const string           &str, 
     const string           &delimiters, 
     const bool             &ignoreEmpty, 
-    function<void(string)> putToken) 
+    function<void(string)>  putToken) 
 {
     for (size_t pos = 0;;) {
         size_t delimPos = str.find_first_of(delimiters, pos);
