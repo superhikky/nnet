@@ -23,7 +23,7 @@ const string USAGE =
 "設定項目の一覧\n"
 "  inferImagesFile 推定に使った手書き数字画像のファイル。省略不可\n"
 "  inferLabelsFile 推定に使ったラベルのファイル。省略不可\n"
-"  onlyMistake    不正解のみを表示するかどうか。yesまたはno。省略なら" DEFAULT_ONLY_MISTAKE "\n"
+"  onlyMistake     不正解のみを表示するかどうか。yesまたはno。省略なら" DEFAULT_ONLY_MISTAKE "\n"
 "標準入力: 推定で出力されたログを入力します。\n"
 ;
 
