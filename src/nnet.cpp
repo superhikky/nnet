@@ -13,6 +13,8 @@
 using namespace std;
 
 #define DEFAULT_COST_FUNCTION       "quadratic"
+#define DEFAULT_REGULARIZATION      "null"
+#define DEFAULT_WEIGHT_DECAY_RATE   "0.1"
 #define DEFAULT_DROPOUT_RATIO       "0.0"
 #define DEFAULT_TRAIN_IMAGES_OFFSET "0"
 #define DEFAULT_TRAIN_IMAGES_NUMBER "1000"
@@ -22,8 +24,6 @@ using namespace std;
 #define DEFAULT_EPOCHS_NUMBER       "10"
 #define DEFAULT_BATCH_SIZE          "10"
 #define DEFAULT_LEARNING_RATE       "5.0"
-#define DEFAULT_REGULARIZATION      "null"
-#define DEFAULT_WEIGHT_DECAY_RATE   "0.1"
 #define DEFAULT_INFER_IMAGES_OFFSET "0"
 #define DEFAULT_INFER_IMAGES_NUMBER "100"
 
@@ -119,16 +119,10 @@ const string USAGE =
 "      コスト\n"
 ;
 
-void train(
-    const shared_ptr<map<string, string>> &conf, 
-    HyperParameters *hyperParameters);
-void infer(
-    const shared_ptr<map<string, string>> &conf, 
-    HyperParameters *hyperParameters);
+void train(map<string, string> *conf, HyperParameters *hyperParameters);
+void infer(map<string, string> *conf, HyperParameters *hyperParameters);
 
-using CommandProc = function<void(
-    shared_ptr<map<string, string>>, 
-    HyperParameters *)>;
+using CommandProc = function<void(map<string, string> *, HyperParameters *)>;
 inline const map<string, CommandProc> *getCommandProcs() {
     static const map<string, CommandProc> COMMAND_PROCS = {
         {"train", &train}, 
@@ -174,7 +168,7 @@ int main(int argc, char **argv) {
         hyperParameters->regularization  = getRegularizations()->at((*conf)["regularization"]).get();
         hyperParameters->weightDecayRate = s2d((*conf)["weightDecayRate"]);
         hyperParameters->dropoutRatio    = s2d((*conf)["dropoutRatio"]);
-        getCommandProcs()->at(command)(conf, hyperParameters.get());
+        getCommandProcs()->at(command)(conf.get(), hyperParameters.get());
     } catch (const string &message) {
         cerr << message << endl;
         result = 1;
@@ -182,10 +176,7 @@ int main(int argc, char **argv) {
     return result;
 }
 
-void train(
-    const shared_ptr<map<string, string>> &conf, 
-    HyperParameters *hyperParameters) 
-{
+void train(map<string, string> *conf, HyperParameters *hyperParameters) {
     if ((*conf)["trainImagesFile"].empty()) 
         throw describe(__FILE__, "(", __LINE__, "): " , "'trainImagesFile'を設定してください。");
     if ((*conf)["trainLabelsFile"].empty()) 
@@ -277,10 +268,7 @@ void train(
     }
 }
 
-void infer(
-    const shared_ptr<map<string, string>> &conf, 
-    HyperParameters *hyperParameters) 
-{
+void infer(map<string, string> *conf, HyperParameters *hyperParameters) {
     if ((*conf)["inferImagesFile"].empty()) 
         throw describe(__FILE__, "(", __LINE__, "): " , "'inferImagesFile'を設定してください。");
     if ((*conf)["inferLabelsFile"].empty()) 
