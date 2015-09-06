@@ -88,12 +88,10 @@ public:
         const double &weightDecayRate, 
         const size_t &imagesNumber) override 
     {
-        return (
-            1.0 - (
-                learningRate * 
-                weightDecayRate / 
-                (double)imagesNumber
-            )
+        return negateRatio(
+            learningRate * 
+            weightDecayRate / 
+            (double)imagesNumber
         ) * weight;
     }
 };
