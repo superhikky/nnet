@@ -108,10 +108,13 @@ public:
 
 class NotOutputNeuron : public virtual Neuron {
 protected:
+    vector<shared_ptr<Synapse>> outputSynapses;
     bool dropped;
     
     NotOutputNeuron() : dropped(false) {}
 public:
+    virtual vector<shared_ptr<Synapse>> *getOutputSynapses() override 
+        { return &this->outputSynapses; }
     virtual bool wasDropped() override 
         { return this->dropped; }
     virtual void drop() override 
@@ -120,13 +123,7 @@ public:
         { this->dropped = false; }
 };
 
-class InputNeuron : public NotOutputNeuron {
-protected:
-    vector<shared_ptr<Synapse>> outputSynapses;
-public:
-    virtual vector<shared_ptr<Synapse>> *getOutputSynapses() override 
-        { return &this->outputSynapses; }
-};
+class InputNeuron : public NotOutputNeuron {};
 
 class NotInputNeuron : public virtual Neuron {
 protected:
@@ -164,13 +161,6 @@ public:
 };
 
 class OutputNeuron : public NotInputNeuron {};
-
-class HiddenNeuron : public NotOutputNeuron, public NotInputNeuron {
-protected:
-    vector<shared_ptr<Synapse>> outputSynapses;
-public:
-    virtual vector<shared_ptr<Synapse>> *getOutputSynapses() override 
-        { return &this->outputSynapses; }
-};
+class HiddenNeuron : public NotOutputNeuron, public NotInputNeuron {};
 
 #endif
