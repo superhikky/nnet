@@ -417,7 +417,7 @@ public:
                 throw describe(__FILE__, "(", __LINE__, "): " , "'", layerType, "'‚Æ‚¢‚¤‘w‚Í‚ ‚è‚Ü‚¹‚ñB");
             layers->push_back(getMakeLayerProcs()->at(layerType)(&args));
         }
-        if (!dynamic_cast<InputLayer *>(layers->front().get())) 
+        if (layers->size() < 1 || !dynamic_cast<InputLayer *>(layers->front().get())) 
             throw describe(__FILE__, "(", __LINE__, "): " , "Å‰‚Ì‘w‚Í“ü—Í‘w‚Å‚È‚¯‚ê‚Î‚È‚è‚Ü‚¹‚ñB");
         if (layers->size() < 2 || !dynamic_cast<OutputLayer *>(layers->back().get())) 
             throw describe(__FILE__, "(", __LINE__, "): " , "ÅŒã‚Ì‘w‚Ío—Í‘w‚Å‚È‚¯‚ê‚Î‚È‚è‚Ü‚¹‚ñB");

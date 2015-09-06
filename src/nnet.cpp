@@ -247,16 +247,16 @@ void train(map<string, string> *conf, HyperParameters *hyperParameters) {
     };
     log->doneTrain = [](
         const size_t &totalTrainCorrectAnswersNumber, 
-        const double &trainCostAverage, 
+        const double &trainCostsAverage, 
         const size_t &totalEvalCorrectAnswersNumber, 
-        const double &evalCostAverage) 
+        const double &evalCostsAverage) 
     {
         cout << 
             "doneTrain"                    << "\t" << 
             totalTrainCorrectAnswersNumber << "\t" << 
-            trainCostAverage               << "\t" << 
+            trainCostsAverage              << "\t" << 
             totalEvalCorrectAnswersNumber  << "\t" << 
-            evalCostAverage                << endl;
+            evalCostsAverage               << endl;
     };
     net->train(
         s2ul((*conf)["epochsNumber"]), 
