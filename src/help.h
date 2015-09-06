@@ -189,4 +189,13 @@ inline double invert(const double &d) {
     return 1.0 / d;
 }
 
+inline double sign(const double &d) {
+    double s = 0.0;
+    if (d > 0.0) 
+        s = +1.0;
+    else if (d < 0.0) 
+        s = -1.0;
+    return s;
+}
+
 #endif

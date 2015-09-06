@@ -109,7 +109,7 @@ public:
 class NotOutputNeuron : public virtual Neuron {
 protected:
     vector<shared_ptr<Synapse>> outputSynapses;
-    bool dropped;
+    bool                        dropped;
     
     NotOutputNeuron() : dropped(false) {}
 public:

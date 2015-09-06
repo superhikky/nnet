@@ -58,13 +58,8 @@ public:
         const double &weightDecayRate, 
         const size_t &imagesNumber) override 
     {
-        double weightSign = 0.0;
-        if (weight > 0.0) 
-            weightSign = +1.0;
-        else if (weight < 0.0) 
-            weightSign = -1.0;
         return weight - 
-            weightSign * 
+            sign(weight) * 
             learningRate * 
             weightDecayRate / 
             (double)imagesNumber;
