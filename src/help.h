@@ -76,38 +76,39 @@ inline pair<string, string> parseArgument(const string &arg) {
 
 inline void setConfig(
     const string        &arg, 
-    map<string, string> *config) 
+    map<string, string> *conf) 
 {
     auto nameAndValue = parseArgument(arg);
-    (*config)[nameAndValue.first] = nameAndValue.second;
+    (*conf)[nameAndValue.first] = nameAndValue.second;
 }
 
 inline void setConfig(
     istream             &is, 
-    map<string, string> *config) 
+    map<string, string> *conf) 
 {
     string line;
     while (getLineAndChopCR(is, line)) {
-        if (line.empty() || line.at(0) == '#') 
+        if (line.empty() || 
+            line.at(0) == '#') 
             continue;
-        setConfig(line, config);
+        setConfig(line, conf);
     }
 }
 
-inline void setConfig(
+template <typename Iterator> 
+void setConfig(
     const int            &argc, 
-    char                **argv, 
-    map<string, string>  *config) 
+    Iterator              argv, 
+    map<string, string>  *conf) 
 {
     for (auto i = 0; i < argc; i++) {
-        string arg(argv[i]);
+        string arg = *argv++;
         if (arg.empty()) 
             continue;
-        if (arg.at(0) == '@') {
-            auto configIFS = openFile<ifstream>(arg.substr(1), ios::in);
-            setConfig(*configIFS, config);
-        } else 
-            setConfig(arg, config);
+        if (arg.at(0) == '@') 
+            setConfig(*openFile<ifstream>(arg.substr(1), ios::in), conf);
+        else 
+            setConfig(arg, conf);
     }
 }
 
@@ -178,6 +179,14 @@ inline unsigned long reverseByteOrder(const unsigned long &ul) {
     result |= ((ul >>  8) & 0xff) << 16;
     result |= ((ul >>  0) & 0xff) << 24;
     return result;
+}
+
+inline double negateRatio(const double &ratio) {
+    return 1.0 - ratio;
+}
+
+inline double invert(const double &d) {
+    return 1.0 / d;
 }
 
 #endif

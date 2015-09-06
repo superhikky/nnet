@@ -14,8 +14,7 @@ class Regularization {
 public:
     virtual double computeWeightsCost(
         vector<shared_ptr<Layer>> *layers, 
-        const double              &weightDecayRate, 
-        const double              &dropoutRatio) = 0;
+        const double              &weightDecayRate) = 0;
     virtual double computeDecayedWeight(
         const double &weight, 
         const double &learningRate, 
@@ -27,8 +26,7 @@ class NullRegularization : public Regularization {
 public:
     virtual double computeWeightsCost(
         vector<shared_ptr<Layer>> *layers, 
-        const double              &weightDecayRate, 
-        const double              &dropoutRatio) override
+        const double              &weightDecayRate) override
         { return 0.0; }
     virtual double computeDecayedWeight(
         const double &weight, 
@@ -42,16 +40,13 @@ class L1Regularization : public Regularization {
 public:
     virtual double computeWeightsCost(
         vector<shared_ptr<Layer>> *layers, 
-        const double              &weightDecayRate, 
-        const double              &dropoutRatio) override
+        const double              &weightDecayRate) override
     {
         double absoluteWeightsSum = 0.0;
         for (auto l = layers->begin() + 1; l != layers->end(); l++) {
             for (auto n : (*(*l)->getNeurons())) {
-                for (auto s : *n->getInputSynapses()) {
-                    double actualWeight = s->getWeight() * (1.0 - dropoutRatio);
-                    absoluteWeightsSum += fabs(actualWeight);
-                }
+                for (auto s : *n->getInputSynapses()) 
+                    absoluteWeightsSum += fabs(s->getWeight());
             }
         }
         return weightDecayRate * absoluteWeightsSum;
@@ -80,16 +75,13 @@ class L2Regularization : public Regularization {
 public:
     virtual double computeWeightsCost(
         vector<shared_ptr<Layer>> *layers, 
-        const double              &weightDecayRate, 
-        const double              &dropoutRatio) override
+        const double              &weightDecayRate) override
     {
         double squaredWeightsSum = 0.0;
         for (auto l = layers->begin() + 1; l != layers->end(); l++) {
             for (auto n : (*(*l)->getNeurons())) {
-                for (auto s : *n->getInputSynapses()) {
-                    double actualWeight = s->getWeight() * (1.0 - dropoutRatio);
-                    squaredWeightsSum += actualWeight * actualWeight;
-                }
+                for (auto s : *n->getInputSynapses()) 
+                    squaredWeightsSum += s->getWeight() * s->getWeight();
             }
         }
         return (weightDecayRate / 2.0) * squaredWeightsSum;

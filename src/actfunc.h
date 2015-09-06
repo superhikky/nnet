@@ -1,6 +1,7 @@
 #ifndef ACTFUNC_H
 #define ACTFUNC_H
 
+#include "help.h"
 #include <cmath>
 
 using namespace std;
@@ -14,12 +15,12 @@ public:
 class SigmoidActivationFunction : public ActivationFunction {
 public:
     virtual double computeOutput(const double &input) override {
-        return 1.0 / (1.0 + exp(-input));
+        return invert(1.0 + exp(-input));
     }
     
     virtual double computeDifferentialOutput(const double &input) override {
         double o = computeOutput(input);
-        return o * (1.0 - o);
+        return o * negateRatio(o);
     }
 };
 

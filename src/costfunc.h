@@ -2,6 +2,7 @@
 #define COSTFUNC_H
 
 #include "actfunc.h"
+#include "help.h"
 #include "neuron.h"
 #include <cmath>
 #include <map>
@@ -18,8 +19,8 @@ public:
     
     virtual double computeOutputNeuronError(
         Neuron             *neuron, 
-        ActivationFunction *activationFunction, 
-        const double       &desiredOutput) = 0;
+        const double       &desiredOutput, 
+        ActivationFunction *activationFunction) = 0;
 };
 
 class QuadraticCostFunction : public CostFunction {
@@ -34,8 +35,8 @@ public:
     
     virtual double computeOutputNeuronError(
         Neuron             *neuron, 
-        ActivationFunction *activationFunction, 
-        const double       &desiredOutput) override 
+        const double       &desiredOutput, 
+        ActivationFunction *activationFunction) override 
     {
         return (neuron->getOutput() - desiredOutput) * 
             activationFunction->computeDifferentialOutput(neuron->getInput());
@@ -49,15 +50,15 @@ public:
         const double &desiredOutput) override 
     {
         return -(
-            desiredOutput       * log(neuron->getOutput())     + 
-            (1 - desiredOutput) * log(1 - neuron->getOutput())
+            desiredOutput              * log(neuron->getOutput())              + 
+            negateRatio(desiredOutput) * log(negateRatio(neuron->getOutput()))
         );
     }
     
     virtual double computeOutputNeuronError(
         Neuron             *neuron, 
-        ActivationFunction *activationFunction, 
-        const double       &desiredOutput) override 
+        const double       &desiredOutput, 
+        ActivationFunction *activationFunction) override 
     {
         return neuron->getOutput() - desiredOutput;
     }

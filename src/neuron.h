@@ -29,6 +29,8 @@ public:
         { return this->weight; }
     void setWeight(const double &weight) 
         { this->weight = weight; }
+    void multiplyWeight(const double &multiplier) 
+        { this->weight *= multiplier; }
     double getWeightGradient() 
         { return this->weightGradient; }
     void clearWeightGradient() 
@@ -48,6 +50,8 @@ public:
 };
 
 class Neuron {
+protected:
+    double output;
 public:
     virtual vector<shared_ptr<Synapse>> *getOutputSynapses() 
         { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
@@ -57,10 +61,10 @@ public:
         { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
     virtual void setBias(const double &bias) 
         { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
-    virtual double getOutput() 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
-    virtual void setOutput(const double &output) 
-        { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
+    double getOutput()  
+        { return this->output; }
+    void setOutput(const double &output)  
+        { this->output = output; }
     virtual double getInput() 
         { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
     virtual void clearInput() 
@@ -90,36 +94,44 @@ public:
         if (is.gcount() < sizeof(double)) 
             throw describe(__FILE__, "(", __LINE__, "): " , "パラメータを読み込めません。");
         setBias(bias);
-        for (auto s : *getInputSynapses()) 
-            s->read(is);
+        for (auto inputSynapse : *getInputSynapses()) 
+            inputSynapse->read(is);
     }
     
     void write(ostream &os) {
         double b = getBias();
         os.write((char *)&b, sizeof(double));
-        for (auto s : *getInputSynapses()) 
-            s->write(os);
+        for (auto inputSynapse : *getInputSynapses()) 
+            inputSynapse->write(os);
     }
 };
 
-class InputNeuron : public Neuron {
+class NotOutputNeuron : public virtual Neuron {
+protected:
+    bool dropped;
+    
+    NotOutputNeuron() : dropped(false) {}
+public:
+    virtual bool wasDropped() override 
+        { return this->dropped; }
+    virtual void drop() override 
+        { this->dropped = true; }
+    virtual void restore() override 
+        { this->dropped = false; }
+};
+
+class InputNeuron : public NotOutputNeuron {
 protected:
     vector<shared_ptr<Synapse>> outputSynapses;
-    double output;
 public:
     virtual vector<shared_ptr<Synapse>> *getOutputSynapses() override 
         { return &this->outputSynapses; }
-    virtual double getOutput() override 
-        { return this->output; }
-    virtual void setOutput(const double &output) override 
-        { this->output = output; }
 };
 
-class NotInputNeuron : public Neuron {
+class NotInputNeuron : public virtual Neuron {
 protected:
     vector<shared_ptr<Synapse>> inputSynapses;
     double                      bias;
-    double                      output;
     double                      input;
     double                      error;
     double                      biasGradient;
@@ -133,10 +145,6 @@ public:
         { return this->bias; }
     virtual void setBias(const double &bias) override 
         { this->bias = bias; }
-    virtual double getOutput() override 
-        { return this->output; }
-    virtual void setOutput(const double &output) override 
-        { this->output = output; }
     virtual double getInput() override 
         { return this->input; }
     virtual void clearInput() override 
@@ -157,20 +165,12 @@ public:
 
 class OutputNeuron : public NotInputNeuron {};
 
-class HiddenNeuron : public NotInputNeuron {
+class HiddenNeuron : public NotOutputNeuron, public NotInputNeuron {
 protected:
     vector<shared_ptr<Synapse>> outputSynapses;
-    bool                        dropped;
 public:
-    HiddenNeuron() : dropped(false) {}
     virtual vector<shared_ptr<Synapse>> *getOutputSynapses() override 
         { return &this->outputSynapses; }
-    virtual bool wasDropped() override 
-        { return this->dropped; }
-    virtual void drop() override 
-        { this->dropped = true; }
-    virtual void restore() override 
-        { this->dropped = false; }
 };
 
 #endif

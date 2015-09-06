@@ -17,13 +17,15 @@ protected:
 public:
     vector<shared_ptr<Neuron>> *getNeurons()  
         { return &this->neurons; }
+    virtual double getDropoutRatio() 
+        { return 0.0; }
     virtual ActivationFunction *getActivationFunction() 
         { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
     virtual void connect(Layer *sourceLayer) 
         { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
     
-    void dropNeurons(const double &dropoutRate) {
-        size_t number = (double)getNeurons()->size() * dropoutRate;
+    void dropNeurons() {
+        size_t number = (double)getNeurons()->size() * getDropoutRatio();
         vector<size_t> neuronsIndices(getNeurons()->size());
         for (auto i = 0; i < getNeurons()->size(); i++) 
             neuronsIndices[i] = i;
@@ -51,9 +53,21 @@ public:
     }
 };
 
-class InputLayer : public virtual Layer {
+class NotOutputLayer : public virtual Layer {
+protected:
+    double dropoutRatio;
+    
+    NotOutputLayer(const double &dropoutRatio) : 
+        dropoutRatio(dropoutRatio) {}
+    virtual double getDropoutRatio() override 
+        { return this->dropoutRatio; }
+};
+
+class InputLayer : public NotOutputLayer {
 public:
-    InputLayer() {
+    InputLayer(const double &dropoutRatio) : 
+        NotOutputLayer(dropoutRatio) 
+    {
         for (auto i = 0; i < IMAGE_AREA; i++) 
             this->neurons.push_back(newInstance<InputNeuron>());
     }
@@ -93,12 +107,14 @@ public:
     }
 };
 
-class HiddenLayer : public NotInputLayer {
+class HiddenLayer : public NotOutputLayer, public NotInputLayer {
 protected:
     HiddenLayer(
         const size_t                         &neuronsNumber, 
+        const double                         &dropoutRatio, 
         const shared_ptr<ActivationFunction> &activationFunction) : 
-        NotInputLayer(activationFunction) 
+            NotOutputLayer(dropoutRatio), 
+            NotInputLayer (activationFunction) 
     {
         for (auto i = 0; i < neuronsNumber; i++) 
             this->neurons.push_back(newInstance<HiddenNeuron>());
@@ -109,8 +125,9 @@ class FullyConnectedHiddenLayer : public HiddenLayer, public FullyConnectedLayer
 public:
     FullyConnectedHiddenLayer(
         const size_t                         &neuronsNumber, 
+        const double                         &dropoutRatio, 
         const shared_ptr<ActivationFunction> &activationFunction) : 
-        HiddenLayer(neuronsNumber, activationFunction) {}
+        HiddenLayer(neuronsNumber, dropoutRatio, activationFunction) {}
 };
 
 #endif
