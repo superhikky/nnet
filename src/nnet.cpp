@@ -13,27 +13,28 @@
 
 using namespace std;
 
-#define DEFAULT_NETWORK_FILE        "default.network"
-#define DEFAULT_PARAMETERS_FILE     "default.parameters"
-#define DEFAULT_COST_FUNCTION       "quadratic"
-#define DEFAULT_REGULARIZATION      "null"
-#define DEFAULT_WEIGHT_DECAY_RATE   "0.1"
-#define DEFAULT_TRAIN_IMAGES_FILE   "data/train.images"
-#define DEFAULT_TRAIN_LABELS_FILE   "data/train.labels"
-#define DEFAULT_EVAL_IMAGES_FILE    "data/infer.images"
-#define DEFAULT_EVAL_LABELS_FILE    "data/infer.labels"
-#define DEFAULT_TRAIN_IMAGES_OFFSET "0"
-#define DEFAULT_TRAIN_IMAGES_NUMBER "1000"
-#define DEFAULT_EVAL_IMAGES_OFFSET  "0"
-#define DEFAULT_EVAL_IMAGES_NUMBER  "100"
-#define DEFAULT_READ_PARAMETERS     "yes"
-#define DEFAULT_EPOCHS_NUMBER       "10"
-#define DEFAULT_BATCH_SIZE          "10"
-#define DEFAULT_LEARNING_RATE       "5.0"
-#define DEFAULT_INFER_IMAGES_FILE   "data/infer.images"
-#define DEFAULT_INFER_LABELS_FILE   "data/infer.labels"
-#define DEFAULT_INFER_IMAGES_OFFSET "0"
-#define DEFAULT_INFER_IMAGES_NUMBER "100"
+#define DEFAULT_NETWORK_FILE          "default.network"
+#define DEFAULT_WEIGHT_INITIALIZATION "broad"
+#define DEFAULT_PARAMETERS_FILE       "default.parameters"
+#define DEFAULT_COST_FUNCTION         "quadratic"
+#define DEFAULT_REGULARIZATION        "null"
+#define DEFAULT_WEIGHT_DECAY_RATE     "0.1"
+#define DEFAULT_TRAIN_IMAGES_FILE     "data/train.images"
+#define DEFAULT_TRAIN_LABELS_FILE     "data/train.labels"
+#define DEFAULT_EVAL_IMAGES_FILE      "data/infer.images"
+#define DEFAULT_EVAL_LABELS_FILE      "data/infer.labels"
+#define DEFAULT_TRAIN_IMAGES_OFFSET   "0"
+#define DEFAULT_TRAIN_IMAGES_NUMBER   "1000"
+#define DEFAULT_EVAL_IMAGES_OFFSET    "0"
+#define DEFAULT_EVAL_IMAGES_NUMBER    "100"
+#define DEFAULT_READ_PARAMETERS       "yes"
+#define DEFAULT_EPOCHS_NUMBER         "10"
+#define DEFAULT_BATCH_SIZE            "10"
+#define DEFAULT_LEARNING_RATE         "5.0"
+#define DEFAULT_INFER_IMAGES_FILE     "data/infer.images"
+#define DEFAULT_INFER_LABELS_FILE     "data/infer.labels"
+#define DEFAULT_INFER_IMAGES_OFFSET   "0"
+#define DEFAULT_INFER_IMAGES_NUMBER   "100"
 
 const string USAGE = 
 "nnetはニューラルネットワークを作り、手書き数字画像による訓練と推定を行います。\n"
@@ -50,14 +51,15 @@ const string USAGE =
 "  train ネットワークを訓練する\n"
 "  infer 画像のラベルを推定する\n"
 "train命令とinfer命令に共通の設定項目の一覧\n"
-"  networkFile     ネットワークを定義したファイル。\n"
-"                  省略なら" DEFAULT_NETWORK_FILE "。\n"
-"                  もし存在しなければデフォルトのネットワークを使います。\n"
-"  parametersFile  パラメータのファイル。\n"
-"                  省略なら" DEFAULT_PARAMETERS_FILE "\n"
-"  costFunction    コスト関数。省略なら" DEFAULT_COST_FUNCTION "\n"
-"  regularization  正則化。省略なら" DEFAULT_REGULARIZATION "\n"
-"  weightDecayRate 重み補正率。省略なら" DEFAULT_WEIGHT_DECAY_RATE "\n"
+"  networkFile          ネットワークを定義したファイル。\n"
+"                       省略なら" DEFAULT_NETWORK_FILE "。\n"
+"                       もし存在しなければデフォルトのネットワークを使います。\n"
+"  weightInitialization 重みの初期化。省略なら" DEFAULT_WEIGHT_INITIALIZATION "\n"
+"  parametersFile       パラメータのファイル。\n"
+"                       省略なら" DEFAULT_PARAMETERS_FILE "\n"
+"  costFunction         コスト関数。省略なら" DEFAULT_COST_FUNCTION "\n"
+"  regularization       正則化。省略なら" DEFAULT_REGULARIZATION "\n"
+"  weightDecayRate      重み補正率。省略なら" DEFAULT_WEIGHT_DECAY_RATE "\n"
 "train命令の設定項目の一覧\n"
 "  trainImagesFile   訓練に使う手書き数字画像のファイル。\n"
 "                    省略なら" DEFAULT_TRAIN_IMAGES_FILE "\n"
@@ -100,6 +102,9 @@ const string USAGE =
 "デフォルトのネットワーク: 入力層と出力層しかありません。\n"
 "  input\n"
 "  output\n"
+"重みの初期化の一覧\n"
+"  broad 広い分散\n"
+"  sharp 鋭い分散\n"
 "コスト関数の一覧\n"
 "  quadratic    平均二乗誤差\n"
 "  crossEntropy クロスエントロピー\n"
@@ -163,38 +168,42 @@ int main(int argc, char **argv) {
         if (getCommandProcs()->count(command) == 0) 
             throw describe(__FILE__, "(", __LINE__, "): " , "'", command, "'という命令はありません。");
         auto conf = newInstance<map<string, string>>();
-        (*conf)["networkFile"]       = DEFAULT_NETWORK_FILE;
-        (*conf)["parametersFile"]    = DEFAULT_PARAMETERS_FILE;
-        (*conf)["costFunction"]      = DEFAULT_COST_FUNCTION;
-        (*conf)["regularization"]    = DEFAULT_REGULARIZATION;
-        (*conf)["weightDecayRate"]   = DEFAULT_WEIGHT_DECAY_RATE;
-        (*conf)["trainImagesFile"]   = DEFAULT_TRAIN_IMAGES_FILE;
-        (*conf)["trainLabelsFile"]   = DEFAULT_TRAIN_LABELS_FILE;
-        (*conf)["trainImagesOffset"] = DEFAULT_TRAIN_IMAGES_OFFSET;
-        (*conf)["trainImagesNumber"] = DEFAULT_TRAIN_IMAGES_NUMBER;
-        (*conf)["evalImagesFile"]    = DEFAULT_EVAL_IMAGES_FILE;
-        (*conf)["evalLabelsFile"]    = DEFAULT_EVAL_LABELS_FILE;
-        (*conf)["evalImagesOffset"]  = DEFAULT_EVAL_IMAGES_OFFSET;
-        (*conf)["evalImagesNumber"]  = DEFAULT_EVAL_IMAGES_NUMBER;
-        (*conf)["readParameters"]    = DEFAULT_READ_PARAMETERS;
-        (*conf)["epochsNumber"]      = DEFAULT_EPOCHS_NUMBER;
-        (*conf)["batchSize"]         = DEFAULT_BATCH_SIZE;
-        (*conf)["learningRate"]      = DEFAULT_LEARNING_RATE;
-        (*conf)["inferImagesFile"]   = DEFAULT_INFER_IMAGES_FILE;
-        (*conf)["inferLabelsFile"]   = DEFAULT_INFER_LABELS_FILE;
-        (*conf)["inferImagesOffset"] = DEFAULT_INFER_IMAGES_OFFSET;
-        (*conf)["inferImagesNumber"] = DEFAULT_INFER_IMAGES_NUMBER;
+        (*conf)["networkFile"]          = DEFAULT_NETWORK_FILE;
+        (*conf)["weightInitialization"] = DEFAULT_WEIGHT_INITIALIZATION;
+        (*conf)["parametersFile"]       = DEFAULT_PARAMETERS_FILE;
+        (*conf)["costFunction"]         = DEFAULT_COST_FUNCTION;
+        (*conf)["regularization"]       = DEFAULT_REGULARIZATION;
+        (*conf)["weightDecayRate"]      = DEFAULT_WEIGHT_DECAY_RATE;
+        (*conf)["trainImagesFile"]      = DEFAULT_TRAIN_IMAGES_FILE;
+        (*conf)["trainLabelsFile"]      = DEFAULT_TRAIN_LABELS_FILE;
+        (*conf)["trainImagesOffset"]    = DEFAULT_TRAIN_IMAGES_OFFSET;
+        (*conf)["trainImagesNumber"]    = DEFAULT_TRAIN_IMAGES_NUMBER;
+        (*conf)["evalImagesFile"]       = DEFAULT_EVAL_IMAGES_FILE;
+        (*conf)["evalLabelsFile"]       = DEFAULT_EVAL_LABELS_FILE;
+        (*conf)["evalImagesOffset"]     = DEFAULT_EVAL_IMAGES_OFFSET;
+        (*conf)["evalImagesNumber"]     = DEFAULT_EVAL_IMAGES_NUMBER;
+        (*conf)["readParameters"]       = DEFAULT_READ_PARAMETERS;
+        (*conf)["epochsNumber"]         = DEFAULT_EPOCHS_NUMBER;
+        (*conf)["batchSize"]            = DEFAULT_BATCH_SIZE;
+        (*conf)["learningRate"]         = DEFAULT_LEARNING_RATE;
+        (*conf)["inferImagesFile"]      = DEFAULT_INFER_IMAGES_FILE;
+        (*conf)["inferLabelsFile"]      = DEFAULT_INFER_LABELS_FILE;
+        (*conf)["inferImagesOffset"]    = DEFAULT_INFER_IMAGES_OFFSET;
+        (*conf)["inferImagesNumber"]    = DEFAULT_INFER_IMAGES_NUMBER;
         if (fileExist("default.config")) 
             setConfig(*openFile<ifstream>("default.config", ios::in), conf.get());
         setConfig(argc - 2, argv + 2, conf.get());
+        if (getWeightInitializations()->count((*conf)["weightInitialization"]) == 0) 
+            throw describe(__FILE__, "(", __LINE__, "): " , "'", (*conf)["weightInitialization"], "'という重み初期化はありません。");
         if (getCostFunctions()->count((*conf)["costFunction"]) == 0) 
             throw describe(__FILE__, "(", __LINE__, "): " , "'", (*conf)["costFunction"], "'というコスト関数はありません。");
         if (getRegularizations()->count((*conf)["regularization"]) == 0) 
             throw describe(__FILE__, "(", __LINE__, "): " , "'", (*conf)["regularization"], "'という正則化はありません。");
         auto hyperParameters = newInstance<HyperParameters>();
-        hyperParameters->costFunction    = getCostFunctions()->at((*conf)["costFunction"]).get();
-        hyperParameters->regularization  = getRegularizations()->at((*conf)["regularization"]).get();
-        hyperParameters->weightDecayRate = s2d((*conf)["weightDecayRate"]);
+        hyperParameters->weightInitialization = getWeightInitializations()->at((*conf)["weightInitialization"]).get();
+        hyperParameters->costFunction         = getCostFunctions()->at((*conf)["costFunction"]).get();
+        hyperParameters->regularization       = getRegularizations()->at((*conf)["regularization"]).get();
+        hyperParameters->weightDecayRate      = s2d((*conf)["weightDecayRate"]);
         getCommandProcs()->at(command)(conf.get(), hyperParameters.get());
     } catch (const string &message) {
         cerr << message << endl;
@@ -281,7 +290,8 @@ void infer(map<string, string> *conf, HyperParameters *hyperParameters) {
         *openFile<ifstream>((*conf)["networkFile"], ios::in), 
         hyperParameters, 
         log);
-    net->read(*openFile<ifstream>((*conf)["parametersFile"], ios::in | ios::binary));
+    if (fileExist((*conf)["parametersFile"])) 
+        net->read(*openFile<ifstream>((*conf)["parametersFile"], ios::in | ios::binary));
     
     log->doneInferImage = [](
         const size_t &inferImageIndex, 

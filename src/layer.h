@@ -5,6 +5,8 @@
 #include "help.h"
 #include "mnist.h"
 #include "neuron.h"
+#include "wgtinit.h"
+#include <cmath>
 #include <iostream>
 #include <memory>
 #include <vector>
@@ -21,7 +23,9 @@ public:
         { return 0.0; }
     virtual ActivationFunction *getActivationFunction() 
         { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
-    virtual void connect(Layer *sourceLayer) 
+    virtual void connect(
+        Layer                *sourceLayer, 
+        WeightInitialization *weightInitializtion) 
         { throw describe(__FILE__, "(", __LINE__, "): ", "不正な呼び出しです。"); }
     
     void dropNeurons() {
@@ -86,10 +90,17 @@ public:
 
 class FullyConnectedLayer : public virtual Layer {
 public:
-    virtual void connect(Layer *sourceLayer) override {
+    virtual void connect(
+        Layer                *sourceLayer, 
+        WeightInitialization *weightInitializtion) override 
+    {
         for (auto src : *sourceLayer->getNeurons()) {
             for (auto dest : this->neurons) {
-                auto s = newInstance<Synapse>(src.get(), dest.get());
+                auto s = newInstance<Synapse>(
+                    src.get(), 
+                    dest.get(), 
+                    weightInitializtion->generateWeight(
+                        sourceLayer->getNeurons()->size()));
                 src->getOutputSynapses()->push_back(s);
                 dest->getInputSynapses()->push_back(s);
             }

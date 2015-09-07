@@ -7,6 +7,7 @@
 #include "mnist.h"
 #include "neuron.h"
 #include "regriz.h"
+#include "wgtinit.h"
 #include <functional>
 #include <iostream>
 #include <map>
@@ -21,10 +22,11 @@ using namespace std;
 #define DEFAULT_FULLY_CONNECTED_DROPOUT_RATIO  "0.0"
 
 struct HyperParameters {
-    CostFunction   *costFunction;
-    Regularization *regularization;
-    double          weightDecayRate;
-    double          learningRate;
+    WeightInitialization *weightInitialization;
+    CostFunction         *costFunction;
+    Regularization       *regularization;
+    double                weightDecayRate;
+    double                learningRate;
 };
 
 struct Log {
@@ -228,11 +230,7 @@ public:
         const shared_ptr<Log>                       &log) : 
             layers         (layers), 
             hyperParameters(hyperParameters), 
-            log            (log) 
-    {
-        for (auto i = 1; i < this->layers->size(); i++) 
-            (*this->layers)[i]->connect((*this->layers)[i - 1].get());
-    }
+            log            (log) {}
     
     void train(
         const size_t   &epochsNumber, 
@@ -425,12 +423,16 @@ public:
             if (!dynamic_cast<HiddenLayer *>(l->get())) 
                 throw describe(__FILE__, "(", __LINE__, "): " , "íÜä‘ÇÃëwÇÕâBÇÍëwÇ≈Ç»ÇØÇÍÇŒÇ»ÇËÇ‹ÇπÇÒÅB");
         }
+        for (auto i = 1; i < layers->size(); i++) 
+            (*layers)[i]->connect(
+                (*layers)[i - 1].get(), 
+                hyperParameters->weightInitialization);
         return newInstance<Network>(layers, hyperParameters, log);
     }
     
     static NetworkBuilder *getInstance() {
-        static NetworkBuilder instance;
-        return &instance;
+        static NetworkBuilder INSTANCE;
+        return &INSTANCE;
     }
 };
 

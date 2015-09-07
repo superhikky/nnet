@@ -17,10 +17,10 @@ protected:
     double  weight;
     double  weightGradient;
 public:
-    Synapse(Neuron *source, Neuron *destination) : 
+    Synapse(Neuron *source, Neuron *destination, const double &weight) : 
         source(source), 
         destination(destination), 
-        weight(Random::getInstance()->normalDistribution<double>(0.0, 1.0)) {}
+        weight(weight) {}
     Neuron *getSource() 
         { return this->source; }
     Neuron *getDestination() 
