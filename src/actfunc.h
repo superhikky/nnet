@@ -18,7 +18,7 @@ public:
         const double               &input, 
         vector<shared_ptr<Neuron>> *neurons) = 0;
     virtual double computeDifferentialOutput(
-        const double &input, 
+        const double               &input, 
         vector<shared_ptr<Neuron>> *neurons) = 0;
 };
 
@@ -32,7 +32,7 @@ public:
     }
     
     virtual double computeDifferentialOutput(
-        const double &input, 
+        const double               &input, 
         vector<shared_ptr<Neuron>> *neurons) override 
     {
         double o = computeOutput(input, neurons);
@@ -50,7 +50,7 @@ public:
     }
     
     virtual double computeDifferentialOutput(
-        const double &input, 
+        const double               &input, 
         vector<shared_ptr<Neuron>> *neurons) override 
     {
         double t = tanh(0.5 * input);
@@ -66,12 +66,12 @@ public:
     {
         double inputExpsSum = 0.0;
         for (auto n : *neurons) 
-        inputExpsSum += exp(n->getInput());
+            inputExpsSum += exp(n->getInput());
         return exp(input) / inputExpsSum;
     }
     
     virtual double computeDifferentialOutput(
-        const double &input, 
+        const double               &input, 
         vector<shared_ptr<Neuron>> *neurons) override 
     {
         double o = computeOutput(input, neurons);
