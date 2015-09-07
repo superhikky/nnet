@@ -115,7 +115,9 @@ protected:
                     n->addInput(is->getWeight() * src->getOutput());
                 }
                 n->addInput(n->getBias());
-                n->setOutput((*l)->getActivationFunction()->computeOutput(n->getInput()));
+                n->setOutput((*l)->getActivationFunction()->computeOutput(
+                    n->getInput(), 
+                    (*l)->getNeurons()));
             }
         }
     }
@@ -152,7 +154,8 @@ protected:
                     n->setError(this->hyperParameters->costFunction->computeOutputNeuronError(
                         n.get(), 
                         getDesiredOutput(i, label), 
-                        (*l)->getActivationFunction()));
+                        (*l)->getActivationFunction(), 
+                        (*l)->getNeurons()));
                 }
             } else {
                 for (auto n : (*(*l)->getNeurons())) {
@@ -165,7 +168,9 @@ protected:
                             continue;
                         error += os->getWeight() * dest->getError();
                     }
-                    error *= (*l)->getActivationFunction()->computeDifferentialOutput(n->getInput());
+                    error *= (*l)->getActivationFunction()->computeDifferentialOutput(
+                        n->getInput(), 
+                        (*l)->getNeurons());
                     n->setError(error);
                 }
             }

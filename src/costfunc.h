@@ -8,6 +8,7 @@
 #include <map>
 #include <memory>
 #include <string>
+#include <vector>
 
 using namespace std;
 
@@ -18,9 +19,10 @@ public:
         const double &desiredOutput) = 0;
     
     virtual double computeOutputNeuronError(
-        Neuron             *neuron, 
-        const double       &desiredOutput, 
-        ActivationFunction *activationFunction) = 0;
+        Neuron                     *neuron, 
+        const double               &desiredOutput, 
+        ActivationFunction         *activationFunction, 
+        vector<shared_ptr<Neuron>> *neurons) = 0;
 };
 
 class QuadraticFunction : public CostFunction {
@@ -34,12 +36,15 @@ public:
     }
     
     virtual double computeOutputNeuronError(
-        Neuron             *neuron, 
-        const double       &desiredOutput, 
-        ActivationFunction *activationFunction) override 
+        Neuron                     *neuron, 
+        const double               &desiredOutput, 
+        ActivationFunction         *activationFunction, 
+        vector<shared_ptr<Neuron>> *neurons) override 
     {
         return (neuron->getOutput() - desiredOutput) * 
-            activationFunction->computeDifferentialOutput(neuron->getInput());
+            activationFunction->computeDifferentialOutput(
+                neuron->getInput(), 
+                neurons);
     }
 };
 
@@ -56,9 +61,10 @@ public:
     }
     
     virtual double computeOutputNeuronError(
-        Neuron             *neuron, 
-        const double       &desiredOutput, 
-        ActivationFunction *activationFunction) override 
+        Neuron                     *neuron, 
+        const double               &desiredOutput, 
+        ActivationFunction         *activationFunction, 
+        vector<shared_ptr<Neuron>> *neurons) override 
     {
         return neuron->getOutput() - desiredOutput;
     }
