@@ -79,7 +79,7 @@ public:
                     squaredWeightsSum += s->getWeight() * s->getWeight();
             }
         }
-        return (weightDecayRate / 2.0) * squaredWeightsSum;
+        return 0.5 * weightDecayRate * squaredWeightsSum;
     }
     
     virtual double computeDecayedWeight(

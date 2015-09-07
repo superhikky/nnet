@@ -14,7 +14,7 @@ public:
     virtual double generateWeight(const size_t &inputsNumber) = 0;
 };
 
-class BroadWeightInitialization : public WeightInitialization {
+class BroadInitialization : public WeightInitialization {
 public:
     virtual double generateWeight(const size_t &inputsNumber) override {
         return Random::getInstance()->normalDistribution<double>(
@@ -23,7 +23,7 @@ public:
     }
 };
 
-class SharpWeightInitialization : public WeightInitialization {
+class NarrowInitialization : public WeightInitialization {
 public:
     virtual double generateWeight(const size_t &inputsNumber) override {
         return Random::getInstance()->normalDistribution<double>(
@@ -34,8 +34,8 @@ public:
 
 inline const map<string, shared_ptr<WeightInitialization>> *getWeightInitializations() {
     static const map<string, shared_ptr<WeightInitialization>> WEIGHT_INITIALIZATIONS = {
-        {"broad", newInstance<BroadWeightInitialization>()}, 
-        {"sharp", newInstance<SharpWeightInitialization>()}, 
+        {"broad", newInstance<BroadInitialization>()}, 
+        {"sharp", newInstance<NarrowInitialization>()}, 
     };
     return &WEIGHT_INITIALIZATIONS;
 }

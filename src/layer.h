@@ -79,13 +79,13 @@ public:
 
 class NotInputLayer : public virtual Layer {
 protected:
-    shared_ptr<ActivationFunction> activationFunction;
+    ActivationFunction *activationFunction;
     
-    NotInputLayer(const shared_ptr<ActivationFunction> &activationFunction) : 
+    NotInputLayer(ActivationFunction *activationFunction) : 
         activationFunction(activationFunction) {}
 public:
     virtual ActivationFunction *getActivationFunction() override 
-        { return this->activationFunction.get(); }
+        { return this->activationFunction; }
 };
 
 class FullyConnectedLayer : public virtual Layer {
@@ -110,7 +110,7 @@ public:
 
 class OutputLayer : public NotInputLayer, public FullyConnectedLayer {
 public:
-    OutputLayer(const shared_ptr<ActivationFunction> &activationFunction) : 
+    OutputLayer(ActivationFunction *activationFunction) : 
         NotInputLayer(activationFunction) 
     {
         for (auto i = 0; i < LABEL_VALUES_NUMBER; i++) 
@@ -121,9 +121,9 @@ public:
 class HiddenLayer : public NotOutputLayer, public NotInputLayer {
 protected:
     HiddenLayer(
-        const size_t                         &neuronsNumber, 
-        const double                         &dropoutRatio, 
-        const shared_ptr<ActivationFunction> &activationFunction) : 
+        const size_t       &neuronsNumber, 
+        const double       &dropoutRatio, 
+        ActivationFunction *activationFunction) : 
             NotOutputLayer(dropoutRatio), 
             NotInputLayer (activationFunction) 
     {
@@ -135,9 +135,9 @@ protected:
 class FullyConnectedHiddenLayer : public HiddenLayer, public FullyConnectedLayer {
 public:
     FullyConnectedHiddenLayer(
-        const size_t                         &neuronsNumber, 
-        const double                         &dropoutRatio, 
-        const shared_ptr<ActivationFunction> &activationFunction) : 
+        const size_t       &neuronsNumber, 
+        const double       &dropoutRatio, 
+        ActivationFunction *activationFunction) : 
         HiddenLayer(neuronsNumber, dropoutRatio, activationFunction) {}
 };
 

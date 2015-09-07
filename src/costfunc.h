@@ -23,7 +23,7 @@ public:
         ActivationFunction *activationFunction) = 0;
 };
 
-class QuadraticCostFunction : public CostFunction {
+class QuadraticFunction : public CostFunction {
 public:
     virtual double computeOutputNeuronCost(
         Neuron       *neuron, 
@@ -43,7 +43,7 @@ public:
     }
 };
 
-class CrossEntropyCostFunction : public CostFunction {
+class CrossEntropyFunction : public CostFunction {
 public:
     virtual double computeOutputNeuronCost(
         Neuron       *neuron, 
@@ -66,8 +66,8 @@ public:
 
 inline const map<string, shared_ptr<CostFunction>> *getCostFunctions() {
     static const map<string, shared_ptr<CostFunction>> COST_FUNCTIONS = {
-        {"quadratic",    newInstance<QuadraticCostFunction>()}, 
-        {"crossEntropy", newInstance<CrossEntropyCostFunction>()}, 
+        {"quadratic",    newInstance<QuadraticFunction>()}, 
+        {"crossEntropy", newInstance<CrossEntropyFunction>()}, 
     };
     return &COST_FUNCTIONS;
 }

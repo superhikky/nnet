@@ -1,6 +1,7 @@
 #ifndef NETWORK_H
 #define NETWORK_H
 
+#include "actfunc.h"
 #include "costfunc.h"
 #include "help.h"
 #include "layer.h"
@@ -14,12 +15,17 @@
 #include <memory>
 #include <vector>
 
+#include <cmath>
+
 using namespace std;
 
 #define DEFAULT_INPUT_DROPOUT_RATIO "0.0"
 
-#define DEFAULT_FULLY_CONNECTED_NEURONS_NUMBER "30"
-#define DEFAULT_FULLY_CONNECTED_DROPOUT_RATIO  "0.0"
+#define DEFAULT_FULLY_CONNECTED_NEURONS_NUMBER      "30"
+#define DEFAULT_FULLY_CONNECTED_DROPOUT_RATIO       "0.0"
+#define DEFAULT_FULLY_CONNECTED_ACTIVATION_FUNCTION "sigmoid"
+
+#define DEFAULT_OUTPUT_ACTIVATION_FUNCTION "sigmoid"
 
 struct HyperParameters {
     WeightInitialization *weightInitialization;
@@ -374,8 +380,9 @@ protected:
     
     static shared_ptr<Layer> makeFullyConnectedHiddenLayer(vector<string> *args) {
         auto conf = newInstance<map<string, string>>();
-        (*conf)["neuronsNumber"] = DEFAULT_FULLY_CONNECTED_NEURONS_NUMBER;
-        (*conf)["dropoutRatio"]  = DEFAULT_FULLY_CONNECTED_DROPOUT_RATIO;
+        (*conf)["neuronsNumber"]      = DEFAULT_FULLY_CONNECTED_NEURONS_NUMBER;
+        (*conf)["dropoutRatio"]       = DEFAULT_FULLY_CONNECTED_DROPOUT_RATIO;
+        (*conf)["activationFunction"] = DEFAULT_FULLY_CONNECTED_ACTIVATION_FUNCTION;
         setConfig(args->size() - 1, args->begin() + 1, conf.get());
         size_t neuronsNumber = s2ul((*conf)["neuronsNumber"]);
         if (neuronsNumber == 0) 
@@ -383,14 +390,22 @@ protected:
         double dropoutRatio = s2d((*conf)["dropoutRatio"]);
         if (dropoutRatio < 0.0 || dropoutRatio >= 1.0) 
             throw describe(__FILE__, "(", __LINE__, "): " , "ドロップアウト率は0.0以上かつ1.0未満でなければなりません。");
+        if (getActivationFunctions()->count((*conf)["activationFunction"]) == 0) 
+            throw describe(__FILE__, "(", __LINE__, "): " , "'", (*conf)["activationFunction"], "'という活性化関数はありません。");
         return newInstance<FullyConnectedHiddenLayer>(
             neuronsNumber, 
             dropoutRatio, 
-            newInstance<SigmoidActivationFunction>());
+            getActivationFunctions()->at((*conf)["activationFunction"]).get());
     }
     
     static shared_ptr<Layer> makeOutputLayer(vector<string> *args) {
-        return newInstance<OutputLayer>(newInstance<SigmoidActivationFunction>());
+        auto conf = newInstance<map<string, string>>();
+        (*conf)["activationFunction"] = DEFAULT_OUTPUT_ACTIVATION_FUNCTION;
+        setConfig(args->size() - 1, args->begin() + 1, conf.get());
+        if (getActivationFunctions()->count((*conf)["activationFunction"]) == 0) 
+            throw describe(__FILE__, "(", __LINE__, "): " , "'", (*conf)["activationFunction"], "'という活性化関数はありません。");
+        return newInstance<OutputLayer>(
+            getActivationFunctions()->at((*conf)["activationFunction"]).get());
     }
 public:
     shared_ptr<Network> build(
